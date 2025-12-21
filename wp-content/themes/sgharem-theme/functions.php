@@ -3,3 +3,1748 @@ function sgharem_assets() {
     wp_enqueue_style('sgharem-style', get_stylesheet_uri(), [], '1.0');
 }
 add_action('wp_enqueue_scripts', 'sgharem_assets');
+
+// Register Banner Custom Post Type
+function sgharem_register_banner_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Banners',
+            'singular_name' => 'Banner',
+            'add_new' => 'Add New Banner',
+            'add_new_item' => 'Add New Banner',
+            'edit_item' => 'Edit Banner',
+            'all_items' => 'All Banners',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-format-image',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('banner', $args);
+}
+add_action('init', 'sgharem_register_banner_cpt');
+
+// Add Banner Meta Boxes
+function sgharem_banner_meta_boxes() {
+    add_meta_box(
+        'banner_settings',
+        'Banner Settings',
+        'sgharem_banner_meta_callback',
+        'banner',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_banner_meta_boxes');
+
+function sgharem_banner_meta_callback($post) {
+    wp_nonce_field('sgharem_banner_nonce', 'banner_nonce');
+
+    $heading = get_post_meta($post->ID, '_banner_heading', true);
+    $description = get_post_meta($post->ID, '_banner_description', true);
+    $button_text = get_post_meta($post->ID, '_banner_button_text', true);
+    $button_url = get_post_meta($post->ID, '_banner_button_url', true);
+    $is_active = get_post_meta($post->ID, '_banner_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="banner_active">Active</label></th>
+            <td><input type="checkbox" id="banner_active" name="banner_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="banner_heading">Heading</label></th>
+            <td><input type="text" id="banner_heading" name="banner_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="banner_description">Description</label></th>
+            <td><textarea id="banner_description" name="banner_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="banner_button_text">Button Text</label></th>
+            <td><input type="text" id="banner_button_text" name="banner_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="banner_button_url">Button URL</label></th>
+            <td><input type="url" id="banner_button_url" name="banner_button_url" value="<?php echo esc_url($button_url); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_banner_meta($post_id) {
+    if (!isset($_POST['banner_nonce']) || !wp_verify_nonce($_POST['banner_nonce'], 'sgharem_banner_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $fields = array('banner_heading', 'banner_description', 'banner_button_text', 'banner_button_url');
+    foreach ($fields as $field) {
+        if (isset($_POST[$field])) {
+            update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+
+    $is_active = isset($_POST['banner_active']) ? '1' : '0';
+    update_post_meta($post_id, '_banner_active', $is_active);
+}
+add_action('save_post_banner', 'sgharem_save_banner_meta');
+
+// Get Active Banner
+function sgharem_get_active_banner() {
+    $banners = get_posts(array(
+        'post_type' => 'banner',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_banner_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($banners)) {
+        $banner = $banners[0];
+        return array(
+            'heading' => get_post_meta($banner->ID, '_banner_heading', true),
+            'description' => get_post_meta($banner->ID, '_banner_description', true),
+            'button_text' => get_post_meta($banner->ID, '_banner_button_text', true),
+            'button_url' => get_post_meta($banner->ID, '_banner_button_url', true),
+        );
+    }
+    return false;
+}
+
+// Register SEO Text Custom Post Type
+function sgharem_register_seotext_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'SEO Texts',
+            'singular_name' => 'SEO Text',
+            'add_new' => 'Add New SEO Text',
+            'add_new_item' => 'Add New SEO Text',
+            'edit_item' => 'Edit SEO Text',
+            'all_items' => 'All SEO Texts',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-editor-paragraph',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('seo_text', $args);
+}
+add_action('init', 'sgharem_register_seotext_cpt');
+
+// Add SEO Text Meta Boxes
+function sgharem_seotext_meta_boxes() {
+    add_meta_box(
+        'seotext_settings',
+        'SEO Text Settings',
+        'sgharem_seotext_meta_callback',
+        'seo_text',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_seotext_meta_boxes');
+
+function sgharem_seotext_meta_callback($post) {
+    wp_nonce_field('sgharem_seotext_nonce', 'seotext_nonce');
+
+    $heading = get_post_meta($post->ID, '_seotext_heading', true);
+    $content = get_post_meta($post->ID, '_seotext_content', true);
+    $is_active = get_post_meta($post->ID, '_seotext_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="seotext_active">Active</label></th>
+            <td><input type="checkbox" id="seotext_active" name="seotext_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="seotext_heading">Heading</label></th>
+            <td><input type="text" id="seotext_heading" name="seotext_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="seotext_content">Content</label></th>
+            <td><textarea id="seotext_content" name="seotext_content" rows="5" class="large-text"><?php echo esc_textarea($content); ?></textarea></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_seotext_meta($post_id) {
+    if (!isset($_POST['seotext_nonce']) || !wp_verify_nonce($_POST['seotext_nonce'], 'sgharem_seotext_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['seotext_heading'])) {
+        update_post_meta($post_id, '_seotext_heading', sanitize_text_field($_POST['seotext_heading']));
+    }
+    if (isset($_POST['seotext_content'])) {
+        update_post_meta($post_id, '_seotext_content', sanitize_textarea_field($_POST['seotext_content']));
+    }
+
+    $is_active = isset($_POST['seotext_active']) ? '1' : '0';
+    update_post_meta($post_id, '_seotext_active', $is_active);
+}
+add_action('save_post_seo_text', 'sgharem_save_seotext_meta');
+
+// Get Active SEO Text
+function sgharem_get_active_seotext() {
+    $seotexts = get_posts(array(
+        'post_type' => 'seo_text',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_seotext_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($seotexts)) {
+        $seotext = $seotexts[0];
+        return array(
+            'heading' => get_post_meta($seotext->ID, '_seotext_heading', true),
+            'content' => get_post_meta($seotext->ID, '_seotext_content', true),
+        );
+    }
+    return false;
+}
+
+// Register Gallery Custom Post Type
+function sgharem_register_gallery_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Gallery',
+            'singular_name' => 'Gallery Image',
+            'add_new' => 'Add New Image',
+            'add_new_item' => 'Add New Gallery Image',
+            'edit_item' => 'Edit Gallery Image',
+            'all_items' => 'All Gallery Images',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-images-alt2',
+        'supports' => array('title', 'thumbnail'),
+        'has_archive' => false,
+    );
+    register_post_type('gallery', $args);
+}
+add_action('init', 'sgharem_register_gallery_cpt');
+
+// Add Gallery Meta Boxes
+function sgharem_gallery_meta_boxes() {
+    add_meta_box(
+        'gallery_settings',
+        'Gallery Settings',
+        'sgharem_gallery_meta_callback',
+        'gallery',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_gallery_meta_boxes');
+
+function sgharem_gallery_meta_callback($post) {
+    wp_nonce_field('sgharem_gallery_nonce', 'gallery_nonce');
+
+    $link_url = get_post_meta($post->ID, '_gallery_link_url', true);
+    $alt_text = get_post_meta($post->ID, '_gallery_alt_text', true);
+    $is_active = get_post_meta($post->ID, '_gallery_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="gallery_active">Active</label></th>
+            <td><input type="checkbox" id="gallery_active" name="gallery_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="gallery_link_url">Link URL</label></th>
+            <td><input type="url" id="gallery_link_url" name="gallery_link_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="gallery_alt_text">Alt Text</label></th>
+            <td><input type="text" id="gallery_alt_text" name="gallery_alt_text" value="<?php echo esc_attr($alt_text); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Featured Image" (on the right sidebar) to upload the gallery image.</p>
+    <?php
+}
+
+function sgharem_save_gallery_meta($post_id) {
+    if (!isset($_POST['gallery_nonce']) || !wp_verify_nonce($_POST['gallery_nonce'], 'sgharem_gallery_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['gallery_link_url'])) {
+        update_post_meta($post_id, '_gallery_link_url', esc_url_raw($_POST['gallery_link_url']));
+    }
+    if (isset($_POST['gallery_alt_text'])) {
+        update_post_meta($post_id, '_gallery_alt_text', sanitize_text_field($_POST['gallery_alt_text']));
+    }
+
+    $is_active = isset($_POST['gallery_active']) ? '1' : '0';
+    update_post_meta($post_id, '_gallery_active', $is_active);
+}
+add_action('save_post_gallery', 'sgharem_save_gallery_meta');
+
+// Get Active Gallery Images
+function sgharem_get_gallery_images() {
+    $images = get_posts(array(
+        'post_type' => 'gallery',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_gallery_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $gallery = array();
+    foreach ($images as $image) {
+        $thumbnail_id = get_post_thumbnail_id($image->ID);
+        if ($thumbnail_id) {
+            $gallery[] = array(
+                'image_url' => get_the_post_thumbnail_url($image->ID, 'large'),
+                'link_url' => get_post_meta($image->ID, '_gallery_link_url', true),
+                'alt_text' => get_post_meta($image->ID, '_gallery_alt_text', true),
+                'title' => get_the_title($image->ID),
+            );
+        }
+    }
+    return $gallery;
+}
+
+// Get Gallery Section Settings
+function sgharem_register_gallery_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Gallery Section',
+            'singular_name' => 'Gallery Section',
+            'add_new' => 'Add Gallery Section',
+            'edit_item' => 'Edit Gallery Section',
+            'all_items' => 'Gallery Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=gallery',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('gallery_section', $args);
+}
+add_action('init', 'sgharem_register_gallery_section_cpt');
+
+function sgharem_gallery_section_meta_boxes() {
+    add_meta_box(
+        'gallery_section_settings',
+        'Section Settings',
+        'sgharem_gallery_section_meta_callback',
+        'gallery_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_gallery_section_meta_boxes');
+
+function sgharem_gallery_section_meta_callback($post) {
+    wp_nonce_field('sgharem_gallery_section_nonce', 'gallery_section_nonce');
+    $heading = get_post_meta($post->ID, '_gallery_section_heading', true);
+    $is_active = get_post_meta($post->ID, '_gallery_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="gallery_section_active">Active</label></th>
+            <td><input type="checkbox" id="gallery_section_active" name="gallery_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="gallery_section_heading">Section Heading</label></th>
+            <td><input type="text" id="gallery_section_heading" name="gallery_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_gallery_section_meta($post_id) {
+    if (!isset($_POST['gallery_section_nonce']) || !wp_verify_nonce($_POST['gallery_section_nonce'], 'sgharem_gallery_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['gallery_section_heading'])) {
+        update_post_meta($post_id, '_gallery_section_heading', sanitize_text_field($_POST['gallery_section_heading']));
+    }
+    $is_active = isset($_POST['gallery_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_gallery_section_active', $is_active);
+}
+add_action('save_post_gallery_section', 'sgharem_save_gallery_section_meta');
+
+function sgharem_get_gallery_section() {
+    $sections = get_posts(array(
+        'post_type' => 'gallery_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_gallery_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_gallery_section_heading', true),
+        );
+    }
+    return false;
+}
+
+// Enable featured image support
+add_theme_support('post-thumbnails');
+
+// Register Quick Links Custom Post Type
+function sgharem_register_quicklinks_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Quick Links',
+            'singular_name' => 'Quick Link',
+            'add_new' => 'Add New Link',
+            'add_new_item' => 'Add New Quick Link',
+            'edit_item' => 'Edit Quick Link',
+            'all_items' => 'All Quick Links',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-admin-links',
+        'supports' => array('title', 'thumbnail'),
+        'has_archive' => false,
+    );
+    register_post_type('quick_link', $args);
+}
+add_action('init', 'sgharem_register_quicklinks_cpt');
+
+// Add Quick Links Meta Boxes
+function sgharem_quicklinks_meta_boxes() {
+    add_meta_box(
+        'quicklink_settings',
+        'Quick Link Settings',
+        'sgharem_quicklinks_meta_callback',
+        'quick_link',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_quicklinks_meta_boxes');
+
+function sgharem_quicklinks_meta_callback($post) {
+    wp_nonce_field('sgharem_quicklink_nonce', 'quicklink_nonce');
+
+    $link_url = get_post_meta($post->ID, '_quicklink_url', true);
+    $description = get_post_meta($post->ID, '_quicklink_description', true);
+    $button_text = get_post_meta($post->ID, '_quicklink_button_text', true);
+    $is_active = get_post_meta($post->ID, '_quicklink_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="quicklink_active">Active</label></th>
+            <td><input type="checkbox" id="quicklink_active" name="quicklink_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="quicklink_url">Link URL</label></th>
+            <td><input type="url" id="quicklink_url" name="quicklink_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="quicklink_description">Description</label></th>
+            <td><textarea id="quicklink_description" name="quicklink_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="quicklink_button_text">Button Text</label></th>
+            <td><input type="text" id="quicklink_button_text" name="quicklink_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. Website"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Featured Image" to set the card image.</p>
+    <?php
+}
+
+function sgharem_save_quicklink_meta($post_id) {
+    if (!isset($_POST['quicklink_nonce']) || !wp_verify_nonce($_POST['quicklink_nonce'], 'sgharem_quicklink_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['quicklink_url'])) {
+        update_post_meta($post_id, '_quicklink_url', esc_url_raw($_POST['quicklink_url']));
+    }
+    if (isset($_POST['quicklink_description'])) {
+        update_post_meta($post_id, '_quicklink_description', sanitize_textarea_field($_POST['quicklink_description']));
+    }
+    if (isset($_POST['quicklink_button_text'])) {
+        update_post_meta($post_id, '_quicklink_button_text', sanitize_text_field($_POST['quicklink_button_text']));
+    }
+
+    $is_active = isset($_POST['quicklink_active']) ? '1' : '0';
+    update_post_meta($post_id, '_quicklink_active', $is_active);
+}
+add_action('save_post_quick_link', 'sgharem_save_quicklink_meta');
+
+// Get Active Quick Links
+function sgharem_get_quick_links() {
+    $links = get_posts(array(
+        'post_type' => 'quick_link',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_quicklink_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $quick_links = array();
+    foreach ($links as $link) {
+        $quick_links[] = array(
+            'title' => get_the_title($link->ID),
+            'url' => get_post_meta($link->ID, '_quicklink_url', true),
+            'description' => get_post_meta($link->ID, '_quicklink_description', true),
+            'button_text' => get_post_meta($link->ID, '_quicklink_button_text', true),
+            'image_url' => get_the_post_thumbnail_url($link->ID, 'medium'),
+        );
+    }
+    return $quick_links;
+}
+
+// Quick Links Section Settings
+function sgharem_register_quicklinks_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Section Settings',
+            'singular_name' => 'Section Settings',
+            'add_new' => 'Add Section Settings',
+            'edit_item' => 'Edit Section Settings',
+            'all_items' => 'Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=quick_link',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('quicklink_section', $args);
+}
+add_action('init', 'sgharem_register_quicklinks_section_cpt');
+
+function sgharem_quicklinks_section_meta_boxes() {
+    add_meta_box(
+        'quicklink_section_settings',
+        'Section Settings',
+        'sgharem_quicklinks_section_meta_callback',
+        'quicklink_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_quicklinks_section_meta_boxes');
+
+function sgharem_quicklinks_section_meta_callback($post) {
+    wp_nonce_field('sgharem_quicklink_section_nonce', 'quicklink_section_nonce');
+    $heading = get_post_meta($post->ID, '_quicklink_section_heading', true);
+    $is_active = get_post_meta($post->ID, '_quicklink_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="quicklink_section_active">Active</label></th>
+            <td><input type="checkbox" id="quicklink_section_active" name="quicklink_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="quicklink_section_heading">Section Heading</label></th>
+            <td><input type="text" id="quicklink_section_heading" name="quicklink_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_quicklinks_section_meta($post_id) {
+    if (!isset($_POST['quicklink_section_nonce']) || !wp_verify_nonce($_POST['quicklink_section_nonce'], 'sgharem_quicklink_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['quicklink_section_heading'])) {
+        update_post_meta($post_id, '_quicklink_section_heading', sanitize_text_field($_POST['quicklink_section_heading']));
+    }
+    $is_active = isset($_POST['quicklink_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_quicklink_section_active', $is_active);
+}
+add_action('save_post_quicklink_section', 'sgharem_save_quicklinks_section_meta');
+
+function sgharem_get_quicklinks_section() {
+    $sections = get_posts(array(
+        'post_type' => 'quicklink_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_quicklink_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_quicklink_section_heading', true),
+        );
+    }
+    return false;
+}
+
+// Register Regions Custom Post Type
+function sgharem_register_regions_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Regions',
+            'singular_name' => 'Region',
+            'add_new' => 'Add New Region',
+            'add_new_item' => 'Add New Region',
+            'edit_item' => 'Edit Region',
+            'all_items' => 'All Regions',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-location',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('region', $args);
+}
+add_action('init', 'sgharem_register_regions_cpt');
+
+// Add Regions Meta Boxes
+function sgharem_regions_meta_boxes() {
+    add_meta_box(
+        'region_settings',
+        'Region Settings',
+        'sgharem_regions_meta_callback',
+        'region',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_regions_meta_boxes');
+
+function sgharem_regions_meta_callback($post) {
+    wp_nonce_field('sgharem_region_nonce', 'region_nonce');
+
+    $link_url = get_post_meta($post->ID, '_region_url', true);
+    $description = get_post_meta($post->ID, '_region_description', true);
+    $button_text = get_post_meta($post->ID, '_region_button_text', true);
+    $icon = get_post_meta($post->ID, '_region_icon', true);
+    $is_active = get_post_meta($post->ID, '_region_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="region_active">Active</label></th>
+            <td><input type="checkbox" id="region_active" name="region_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="region_icon">Icon (emoji)</label></th>
+            <td><input type="text" id="region_icon" name="region_icon" value="<?php echo esc_attr($icon); ?>" class="regular-text" placeholder="e.g. 🏙️"></td>
+        </tr>
+        <tr>
+            <th><label for="region_url">Link URL</label></th>
+            <td><input type="url" id="region_url" name="region_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="region_description">Description</label></th>
+            <td><textarea id="region_description" name="region_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="region_button_text">Button Text</label></th>
+            <td><input type="text" id="region_button_text" name="region_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. View Region"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_region_meta($post_id) {
+    if (!isset($_POST['region_nonce']) || !wp_verify_nonce($_POST['region_nonce'], 'sgharem_region_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $fields = array('region_url', 'region_description', 'region_button_text', 'region_icon');
+    foreach ($fields as $field) {
+        if (isset($_POST[$field])) {
+            if ($field === 'region_url') {
+                update_post_meta($post_id, '_' . $field, esc_url_raw($_POST[$field]));
+            } elseif ($field === 'region_description') {
+                update_post_meta($post_id, '_' . $field, sanitize_textarea_field($_POST[$field]));
+            } else {
+                update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+            }
+        }
+    }
+
+    $is_active = isset($_POST['region_active']) ? '1' : '0';
+    update_post_meta($post_id, '_region_active', $is_active);
+}
+add_action('save_post_region', 'sgharem_save_region_meta');
+
+// Get Active Regions
+function sgharem_get_regions() {
+    $regions = get_posts(array(
+        'post_type' => 'region',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_region_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($regions as $region) {
+        $items[] = array(
+            'title' => get_the_title($region->ID),
+            'url' => get_post_meta($region->ID, '_region_url', true),
+            'description' => get_post_meta($region->ID, '_region_description', true),
+            'button_text' => get_post_meta($region->ID, '_region_button_text', true),
+            'icon' => get_post_meta($region->ID, '_region_icon', true),
+        );
+    }
+    return $items;
+}
+
+// Regions Section Settings
+function sgharem_register_regions_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Section Settings',
+            'singular_name' => 'Section Settings',
+            'add_new' => 'Add Section Settings',
+            'edit_item' => 'Edit Section Settings',
+            'all_items' => 'Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=region',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('region_section', $args);
+}
+add_action('init', 'sgharem_register_regions_section_cpt');
+
+function sgharem_regions_section_meta_boxes() {
+    add_meta_box(
+        'region_section_settings',
+        'Section Settings',
+        'sgharem_regions_section_meta_callback',
+        'region_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_regions_section_meta_boxes');
+
+function sgharem_regions_section_meta_callback($post) {
+    wp_nonce_field('sgharem_region_section_nonce', 'region_section_nonce');
+    $heading = get_post_meta($post->ID, '_region_section_heading', true);
+    $subtitle = get_post_meta($post->ID, '_region_section_subtitle', true);
+    $is_active = get_post_meta($post->ID, '_region_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="region_section_active">Active</label></th>
+            <td><input type="checkbox" id="region_section_active" name="region_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="region_section_heading">Section Heading</label></th>
+            <td><input type="text" id="region_section_heading" name="region_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="region_section_subtitle">Section Subtitle</label></th>
+            <td><input type="text" id="region_section_subtitle" name="region_section_subtitle" value="<?php echo esc_attr($subtitle); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_regions_section_meta($post_id) {
+    if (!isset($_POST['region_section_nonce']) || !wp_verify_nonce($_POST['region_section_nonce'], 'sgharem_region_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['region_section_heading'])) {
+        update_post_meta($post_id, '_region_section_heading', sanitize_text_field($_POST['region_section_heading']));
+    }
+    if (isset($_POST['region_section_subtitle'])) {
+        update_post_meta($post_id, '_region_section_subtitle', sanitize_text_field($_POST['region_section_subtitle']));
+    }
+    $is_active = isset($_POST['region_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_region_section_active', $is_active);
+}
+add_action('save_post_region_section', 'sgharem_save_regions_section_meta');
+
+function sgharem_get_regions_section() {
+    $sections = get_posts(array(
+        'post_type' => 'region_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_region_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_region_section_heading', true),
+            'subtitle' => get_post_meta($sections[0]->ID, '_region_section_subtitle', true),
+        );
+    }
+    return false;
+}
+
+// Register Services Custom Post Type
+function sgharem_register_services_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Services',
+            'singular_name' => 'Service',
+            'add_new' => 'Add New Service',
+            'add_new_item' => 'Add New Service',
+            'edit_item' => 'Edit Service',
+            'all_items' => 'All Services',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-hammer',
+        'supports' => array('title', 'thumbnail'),
+        'has_archive' => false,
+    );
+    register_post_type('service', $args);
+}
+add_action('init', 'sgharem_register_services_cpt');
+
+// Add Services Meta Boxes
+function sgharem_services_meta_boxes() {
+    add_meta_box(
+        'service_settings',
+        'Service Settings',
+        'sgharem_services_meta_callback',
+        'service',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_services_meta_boxes');
+
+function sgharem_services_meta_callback($post) {
+    wp_nonce_field('sgharem_service_nonce', 'service_nonce');
+
+    $link_url = get_post_meta($post->ID, '_service_url', true);
+    $description = get_post_meta($post->ID, '_service_description', true);
+    $button_text = get_post_meta($post->ID, '_service_button_text', true);
+    $is_active = get_post_meta($post->ID, '_service_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="service_active">Active</label></th>
+            <td><input type="checkbox" id="service_active" name="service_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="service_url">Link URL</label></th>
+            <td><input type="url" id="service_url" name="service_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="service_description">Description</label></th>
+            <td><textarea id="service_description" name="service_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="service_button_text">Button Text</label></th>
+            <td><input type="text" id="service_button_text" name="service_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. View Service"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Featured Image" to set the service image.</p>
+    <?php
+}
+
+function sgharem_save_service_meta($post_id) {
+    if (!isset($_POST['service_nonce']) || !wp_verify_nonce($_POST['service_nonce'], 'sgharem_service_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['service_url'])) {
+        update_post_meta($post_id, '_service_url', esc_url_raw($_POST['service_url']));
+    }
+    if (isset($_POST['service_description'])) {
+        update_post_meta($post_id, '_service_description', sanitize_textarea_field($_POST['service_description']));
+    }
+    if (isset($_POST['service_button_text'])) {
+        update_post_meta($post_id, '_service_button_text', sanitize_text_field($_POST['service_button_text']));
+    }
+
+    $is_active = isset($_POST['service_active']) ? '1' : '0';
+    update_post_meta($post_id, '_service_active', $is_active);
+}
+add_action('save_post_service', 'sgharem_save_service_meta');
+
+// Get Active Services
+function sgharem_get_services() {
+    $services = get_posts(array(
+        'post_type' => 'service',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_service_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($services as $service) {
+        $items[] = array(
+            'title' => get_the_title($service->ID),
+            'url' => get_post_meta($service->ID, '_service_url', true),
+            'description' => get_post_meta($service->ID, '_service_description', true),
+            'button_text' => get_post_meta($service->ID, '_service_button_text', true),
+            'image_url' => get_the_post_thumbnail_url($service->ID, 'medium'),
+        );
+    }
+    return $items;
+}
+
+// Services Section Settings
+function sgharem_register_services_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Section Settings',
+            'singular_name' => 'Section Settings',
+            'add_new' => 'Add Section Settings',
+            'edit_item' => 'Edit Section Settings',
+            'all_items' => 'Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=service',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('service_section', $args);
+}
+add_action('init', 'sgharem_register_services_section_cpt');
+
+function sgharem_services_section_meta_boxes() {
+    add_meta_box(
+        'service_section_settings',
+        'Section Settings',
+        'sgharem_services_section_meta_callback',
+        'service_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_services_section_meta_boxes');
+
+function sgharem_services_section_meta_callback($post) {
+    wp_nonce_field('sgharem_service_section_nonce', 'service_section_nonce');
+    $heading = get_post_meta($post->ID, '_service_section_heading', true);
+    $subtitle = get_post_meta($post->ID, '_service_section_subtitle', true);
+    $is_active = get_post_meta($post->ID, '_service_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="service_section_active">Active</label></th>
+            <td><input type="checkbox" id="service_section_active" name="service_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="service_section_heading">Section Heading</label></th>
+            <td><input type="text" id="service_section_heading" name="service_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="service_section_subtitle">Section Subtitle</label></th>
+            <td><input type="text" id="service_section_subtitle" name="service_section_subtitle" value="<?php echo esc_attr($subtitle); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_services_section_meta($post_id) {
+    if (!isset($_POST['service_section_nonce']) || !wp_verify_nonce($_POST['service_section_nonce'], 'sgharem_service_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['service_section_heading'])) {
+        update_post_meta($post_id, '_service_section_heading', sanitize_text_field($_POST['service_section_heading']));
+    }
+    if (isset($_POST['service_section_subtitle'])) {
+        update_post_meta($post_id, '_service_section_subtitle', sanitize_text_field($_POST['service_section_subtitle']));
+    }
+    $is_active = isset($_POST['service_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_service_section_active', $is_active);
+}
+add_action('save_post_service_section', 'sgharem_save_services_section_meta');
+
+function sgharem_get_services_section() {
+    $sections = get_posts(array(
+        'post_type' => 'service_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_service_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_service_section_heading', true),
+            'subtitle' => get_post_meta($sections[0]->ID, '_service_section_subtitle', true),
+        );
+    }
+    return false;
+}
+
+// Register Contact Custom Post Type
+function sgharem_register_contact_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Contact',
+            'singular_name' => 'Contact',
+            'add_new' => 'Add Contact',
+            'add_new_item' => 'Add New Contact',
+            'edit_item' => 'Edit Contact',
+            'all_items' => 'All Contacts',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-email',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('contact', $args);
+}
+add_action('init', 'sgharem_register_contact_cpt');
+
+// Add Contact Meta Boxes
+function sgharem_contact_meta_boxes() {
+    add_meta_box(
+        'contact_settings',
+        'Contact Settings',
+        'sgharem_contact_meta_callback',
+        'contact',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_contact_meta_boxes');
+
+function sgharem_contact_meta_callback($post) {
+    wp_nonce_field('sgharem_contact_nonce', 'contact_nonce');
+
+    $heading = get_post_meta($post->ID, '_contact_heading', true);
+    $button_text = get_post_meta($post->ID, '_contact_button_text', true);
+    $button_url = get_post_meta($post->ID, '_contact_button_url', true);
+    $is_active = get_post_meta($post->ID, '_contact_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="contact_active">Active</label></th>
+            <td><input type="checkbox" id="contact_active" name="contact_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="contact_heading">Heading</label></th>
+            <td><input type="text" id="contact_heading" name="contact_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_button_text">Button Text</label></th>
+            <td><input type="text" id="contact_button_text" name="contact_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_button_url">Button URL</label></th>
+            <td><input type="url" id="contact_button_url" name="contact_button_url" value="<?php echo esc_url($button_url); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_contact_meta($post_id) {
+    if (!isset($_POST['contact_nonce']) || !wp_verify_nonce($_POST['contact_nonce'], 'sgharem_contact_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['contact_heading'])) {
+        update_post_meta($post_id, '_contact_heading', sanitize_text_field($_POST['contact_heading']));
+    }
+    if (isset($_POST['contact_button_text'])) {
+        update_post_meta($post_id, '_contact_button_text', sanitize_text_field($_POST['contact_button_text']));
+    }
+    if (isset($_POST['contact_button_url'])) {
+        update_post_meta($post_id, '_contact_button_url', esc_url_raw($_POST['contact_button_url']));
+    }
+
+    $is_active = isset($_POST['contact_active']) ? '1' : '0';
+    update_post_meta($post_id, '_contact_active', $is_active);
+}
+add_action('save_post_contact', 'sgharem_save_contact_meta');
+
+// Get Active Contact
+function sgharem_get_contact() {
+    $contacts = get_posts(array(
+        'post_type' => 'contact',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_contact_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($contacts)) {
+        $contact = $contacts[0];
+        return array(
+            'heading' => get_post_meta($contact->ID, '_contact_heading', true),
+            'button_text' => get_post_meta($contact->ID, '_contact_button_text', true),
+            'button_url' => get_post_meta($contact->ID, '_contact_button_url', true),
+        );
+    }
+    return false;
+}
+
+// Register FAQ Custom Post Type
+function sgharem_register_faq_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'FAQs',
+            'singular_name' => 'FAQ',
+            'add_new' => 'Add New FAQ',
+            'add_new_item' => 'Add New FAQ',
+            'edit_item' => 'Edit FAQ',
+            'all_items' => 'All FAQs',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-editor-help',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('faq', $args);
+}
+add_action('init', 'sgharem_register_faq_cpt');
+
+// Add FAQ Meta Boxes
+function sgharem_faq_meta_boxes() {
+    add_meta_box(
+        'faq_settings',
+        'FAQ Settings',
+        'sgharem_faq_meta_callback',
+        'faq',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_faq_meta_boxes');
+
+function sgharem_faq_meta_callback($post) {
+    wp_nonce_field('sgharem_faq_nonce', 'faq_nonce');
+
+    $question = get_post_meta($post->ID, '_faq_question', true);
+    $answer = get_post_meta($post->ID, '_faq_answer', true);
+    $link_text = get_post_meta($post->ID, '_faq_link_text', true);
+    $link_url = get_post_meta($post->ID, '_faq_link_url', true);
+    $is_active = get_post_meta($post->ID, '_faq_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="faq_active">Active</label></th>
+            <td><input type="checkbox" id="faq_active" name="faq_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="faq_question">Question</label></th>
+            <td><input type="text" id="faq_question" name="faq_question" value="<?php echo esc_attr($question); ?>" class="large-text"></td>
+        </tr>
+        <tr>
+            <th><label for="faq_answer">Answer</label></th>
+            <td><textarea id="faq_answer" name="faq_answer" rows="4" class="large-text"><?php echo esc_textarea($answer); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="faq_link_text">Link Text (optional)</label></th>
+            <td><input type="text" id="faq_link_text" name="faq_link_text" value="<?php echo esc_attr($link_text); ?>" class="regular-text" placeholder="e.g. Website"></td>
+        </tr>
+        <tr>
+            <th><label for="faq_link_url">Link URL (optional)</label></th>
+            <td><input type="url" id="faq_link_url" name="faq_link_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_faq_meta($post_id) {
+    if (!isset($_POST['faq_nonce']) || !wp_verify_nonce($_POST['faq_nonce'], 'sgharem_faq_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['faq_question'])) {
+        update_post_meta($post_id, '_faq_question', sanitize_text_field($_POST['faq_question']));
+    }
+    if (isset($_POST['faq_answer'])) {
+        update_post_meta($post_id, '_faq_answer', sanitize_textarea_field($_POST['faq_answer']));
+    }
+    if (isset($_POST['faq_link_text'])) {
+        update_post_meta($post_id, '_faq_link_text', sanitize_text_field($_POST['faq_link_text']));
+    }
+    if (isset($_POST['faq_link_url'])) {
+        update_post_meta($post_id, '_faq_link_url', esc_url_raw($_POST['faq_link_url']));
+    }
+
+    $is_active = isset($_POST['faq_active']) ? '1' : '0';
+    update_post_meta($post_id, '_faq_active', $is_active);
+}
+add_action('save_post_faq', 'sgharem_save_faq_meta');
+
+// Get Active FAQs
+function sgharem_get_faqs() {
+    $faqs = get_posts(array(
+        'post_type' => 'faq',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_faq_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($faqs as $faq) {
+        $items[] = array(
+            'question' => get_post_meta($faq->ID, '_faq_question', true),
+            'answer' => get_post_meta($faq->ID, '_faq_answer', true),
+            'link_text' => get_post_meta($faq->ID, '_faq_link_text', true),
+            'link_url' => get_post_meta($faq->ID, '_faq_link_url', true),
+        );
+    }
+    return $items;
+}
+
+// FAQ Section Settings
+function sgharem_register_faq_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Section Settings',
+            'singular_name' => 'Section Settings',
+            'add_new' => 'Add Section Settings',
+            'edit_item' => 'Edit Section Settings',
+            'all_items' => 'Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=faq',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('faq_section', $args);
+}
+add_action('init', 'sgharem_register_faq_section_cpt');
+
+function sgharem_faq_section_meta_boxes() {
+    add_meta_box(
+        'faq_section_settings',
+        'Section Settings',
+        'sgharem_faq_section_meta_callback',
+        'faq_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_faq_section_meta_boxes');
+
+function sgharem_faq_section_meta_callback($post) {
+    wp_nonce_field('sgharem_faq_section_nonce', 'faq_section_nonce');
+    $heading = get_post_meta($post->ID, '_faq_section_heading', true);
+    $is_active = get_post_meta($post->ID, '_faq_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="faq_section_active">Active</label></th>
+            <td><input type="checkbox" id="faq_section_active" name="faq_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="faq_section_heading">Section Heading</label></th>
+            <td><input type="text" id="faq_section_heading" name="faq_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_faq_section_meta($post_id) {
+    if (!isset($_POST['faq_section_nonce']) || !wp_verify_nonce($_POST['faq_section_nonce'], 'sgharem_faq_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['faq_section_heading'])) {
+        update_post_meta($post_id, '_faq_section_heading', sanitize_text_field($_POST['faq_section_heading']));
+    }
+    $is_active = isset($_POST['faq_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_faq_section_active', $is_active);
+}
+add_action('save_post_faq_section', 'sgharem_save_faq_section_meta');
+
+function sgharem_get_faq_section() {
+    $sections = get_posts(array(
+        'post_type' => 'faq_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_faq_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_faq_section_heading', true),
+        );
+    }
+    return false;
+}
+
+// Register Footer Links Custom Post Type
+function sgharem_register_footer_link_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Footer',
+            'singular_name' => 'Footer Link',
+            'add_new' => 'Add New Link',
+            'add_new_item' => 'Add New Footer Link',
+            'edit_item' => 'Edit Footer Link',
+            'all_items' => 'All Footer Links',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-editor-kitchensink',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('footer_link', $args);
+}
+add_action('init', 'sgharem_register_footer_link_cpt');
+
+// Add Footer Link Meta Boxes
+function sgharem_footer_link_meta_boxes() {
+    add_meta_box(
+        'footer_link_settings',
+        'Footer Link Settings',
+        'sgharem_footer_link_meta_callback',
+        'footer_link',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_footer_link_meta_boxes');
+
+function sgharem_footer_link_meta_callback($post) {
+    wp_nonce_field('sgharem_footer_link_nonce', 'footer_link_nonce');
+
+    $link_url = get_post_meta($post->ID, '_footer_link_url', true);
+    $target_blank = get_post_meta($post->ID, '_footer_link_target_blank', true);
+    $is_active = get_post_meta($post->ID, '_footer_link_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="footer_link_active">Active</label></th>
+            <td><input type="checkbox" id="footer_link_active" name="footer_link_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="footer_link_url">Link URL</label></th>
+            <td><input type="text" id="footer_link_url" name="footer_link_url" value="<?php echo esc_attr($link_url); ?>" class="regular-text" placeholder="e.g. #regions or https://..."></td>
+        </tr>
+        <tr>
+            <th><label for="footer_link_target_blank">Open in New Tab</label></th>
+            <td><input type="checkbox" id="footer_link_target_blank" name="footer_link_target_blank" value="1" <?php checked($target_blank, '1'); ?>></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_footer_link_meta($post_id) {
+    if (!isset($_POST['footer_link_nonce']) || !wp_verify_nonce($_POST['footer_link_nonce'], 'sgharem_footer_link_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['footer_link_url'])) {
+        update_post_meta($post_id, '_footer_link_url', sanitize_text_field($_POST['footer_link_url']));
+    }
+
+    $target_blank = isset($_POST['footer_link_target_blank']) ? '1' : '0';
+    update_post_meta($post_id, '_footer_link_target_blank', $target_blank);
+
+    $is_active = isset($_POST['footer_link_active']) ? '1' : '0';
+    update_post_meta($post_id, '_footer_link_active', $is_active);
+}
+add_action('save_post_footer_link', 'sgharem_save_footer_link_meta');
+
+// Get Active Footer Links
+function sgharem_get_footer_links() {
+    $links = get_posts(array(
+        'post_type' => 'footer_link',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_footer_link_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($links as $link) {
+        $items[] = array(
+            'title' => get_the_title($link->ID),
+            'url' => get_post_meta($link->ID, '_footer_link_url', true),
+            'target_blank' => get_post_meta($link->ID, '_footer_link_target_blank', true),
+        );
+    }
+    return $items;
+}
+
+// Footer Settings CPT
+function sgharem_register_footer_settings_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Footer Settings',
+            'singular_name' => 'Footer Settings',
+            'add_new' => 'Add Footer Settings',
+            'edit_item' => 'Edit Footer Settings',
+            'all_items' => 'Footer Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=footer_link',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('footer_settings', $args);
+}
+add_action('init', 'sgharem_register_footer_settings_cpt');
+
+function sgharem_footer_settings_meta_boxes() {
+    add_meta_box(
+        'footer_settings_box',
+        'Footer Settings',
+        'sgharem_footer_settings_meta_callback',
+        'footer_settings',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_footer_settings_meta_boxes');
+
+function sgharem_footer_settings_meta_callback($post) {
+    wp_nonce_field('sgharem_footer_settings_nonce', 'footer_settings_nonce');
+    $copyright = get_post_meta($post->ID, '_footer_copyright', true);
+    $is_active = get_post_meta($post->ID, '_footer_settings_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="footer_settings_active">Active</label></th>
+            <td><input type="checkbox" id="footer_settings_active" name="footer_settings_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="footer_copyright">Copyright Text</label></th>
+            <td><textarea id="footer_copyright" name="footer_copyright" rows="3" class="large-text"><?php echo esc_textarea($copyright); ?></textarea></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_footer_settings_meta($post_id) {
+    if (!isset($_POST['footer_settings_nonce']) || !wp_verify_nonce($_POST['footer_settings_nonce'], 'sgharem_footer_settings_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['footer_copyright'])) {
+        update_post_meta($post_id, '_footer_copyright', sanitize_textarea_field($_POST['footer_copyright']));
+    }
+    $is_active = isset($_POST['footer_settings_active']) ? '1' : '0';
+    update_post_meta($post_id, '_footer_settings_active', $is_active);
+}
+add_action('save_post_footer_settings', 'sgharem_save_footer_settings_meta');
+
+function sgharem_get_footer_settings() {
+    $settings = get_posts(array(
+        'post_type' => 'footer_settings',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_footer_settings_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($settings)) {
+        return array(
+            'copyright' => get_post_meta($settings[0]->ID, '_footer_copyright', true),
+        );
+    }
+    return false;
+}
+
+// Register Header Settings Custom Post Type
+function sgharem_register_header_settings_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Header Settings',
+            'singular_name' => 'Header Settings',
+            'add_new' => 'Add Header Settings',
+            'add_new_item' => 'Add New Header Settings',
+            'edit_item' => 'Edit Header Settings',
+            'all_items' => 'All Header Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-admin-customizer',
+        'supports' => array('title', 'thumbnail'),
+        'has_archive' => false,
+    );
+    register_post_type('header_settings', $args);
+}
+add_action('init', 'sgharem_register_header_settings_cpt');
+
+// Add Header Settings Meta Boxes
+function sgharem_header_settings_meta_boxes() {
+    add_meta_box(
+        'header_settings_box',
+        'Header Settings',
+        'sgharem_header_settings_meta_callback',
+        'header_settings',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_header_settings_meta_boxes');
+
+function sgharem_header_settings_meta_callback($post) {
+    wp_nonce_field('sgharem_header_settings_nonce', 'header_settings_nonce');
+
+    $btn1_text = get_post_meta($post->ID, '_header_btn1_text', true);
+    $btn1_url = get_post_meta($post->ID, '_header_btn1_url', true);
+    $btn1_icon = get_post_meta($post->ID, '_header_btn1_icon', true);
+    $btn2_text = get_post_meta($post->ID, '_header_btn2_text', true);
+    $btn2_url = get_post_meta($post->ID, '_header_btn2_url', true);
+    $btn2_icon = get_post_meta($post->ID, '_header_btn2_icon', true);
+    $is_active = get_post_meta($post->ID, '_header_settings_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="header_settings_active">Active</label></th>
+            <td><input type="checkbox" id="header_settings_active" name="header_settings_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th colspan="2"><h3>Button 1 (Website)</h3></th>
+        </tr>
+        <tr>
+            <th><label for="header_btn1_icon">Icon (emoji)</label></th>
+            <td><input type="text" id="header_btn1_icon" name="header_btn1_icon" value="<?php echo esc_attr($btn1_icon); ?>" class="regular-text" placeholder="e.g. 🌐"></td>
+        </tr>
+        <tr>
+            <th><label for="header_btn1_text">Button Text</label></th>
+            <td><input type="text" id="header_btn1_text" name="header_btn1_text" value="<?php echo esc_attr($btn1_text); ?>" class="regular-text" placeholder="e.g. Website"></td>
+        </tr>
+        <tr>
+            <th><label for="header_btn1_url">Button URL</label></th>
+            <td><input type="url" id="header_btn1_url" name="header_btn1_url" value="<?php echo esc_url($btn1_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th colspan="2"><h3>Button 2 (Telegram)</h3></th>
+        </tr>
+        <tr>
+            <th><label for="header_btn2_icon">Icon (emoji)</label></th>
+            <td><input type="text" id="header_btn2_icon" name="header_btn2_icon" value="<?php echo esc_attr($btn2_icon); ?>" class="regular-text" placeholder="e.g. 📱"></td>
+        </tr>
+        <tr>
+            <th><label for="header_btn2_text">Button Text</label></th>
+            <td><input type="text" id="header_btn2_text" name="header_btn2_text" value="<?php echo esc_attr($btn2_text); ?>" class="regular-text" placeholder="e.g. Telegram"></td>
+        </tr>
+        <tr>
+            <th><label for="header_btn2_url">Button URL</label></th>
+            <td><input type="url" id="header_btn2_url" name="header_btn2_url" value="<?php echo esc_url($btn2_url); ?>" class="regular-text"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Featured Image" to set the logo.</p>
+    <?php
+}
+
+function sgharem_save_header_settings_meta($post_id) {
+    if (!isset($_POST['header_settings_nonce']) || !wp_verify_nonce($_POST['header_settings_nonce'], 'sgharem_header_settings_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $fields = array('header_btn1_text', 'header_btn1_icon', 'header_btn2_text', 'header_btn2_icon');
+    foreach ($fields as $field) {
+        if (isset($_POST[$field])) {
+            update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+
+    if (isset($_POST['header_btn1_url'])) {
+        update_post_meta($post_id, '_header_btn1_url', esc_url_raw($_POST['header_btn1_url']));
+    }
+    if (isset($_POST['header_btn2_url'])) {
+        update_post_meta($post_id, '_header_btn2_url', esc_url_raw($_POST['header_btn2_url']));
+    }
+
+    $is_active = isset($_POST['header_settings_active']) ? '1' : '0';
+    update_post_meta($post_id, '_header_settings_active', $is_active);
+}
+add_action('save_post_header_settings', 'sgharem_save_header_settings_meta');
+
+// Get Active Header Settings
+function sgharem_get_header_settings() {
+    $settings = get_posts(array(
+        'post_type' => 'header_settings',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_header_settings_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($settings)) {
+        $post_id = $settings[0]->ID;
+        return array(
+            'logo_url' => get_the_post_thumbnail_url($post_id, 'full'),
+            'btn1_icon' => get_post_meta($post_id, '_header_btn1_icon', true),
+            'btn1_text' => get_post_meta($post_id, '_header_btn1_text', true),
+            'btn1_url' => get_post_meta($post_id, '_header_btn1_url', true),
+            'btn2_icon' => get_post_meta($post_id, '_header_btn2_icon', true),
+            'btn2_text' => get_post_meta($post_id, '_header_btn2_text', true),
+            'btn2_url' => get_post_meta($post_id, '_header_btn2_url', true),
+        );
+    }
+    return false;
+}
