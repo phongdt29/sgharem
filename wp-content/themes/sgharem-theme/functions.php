@@ -2276,3 +2276,129 @@ function sgharem_get_header_settings() {
     }
     return false;
 }
+
+// Register Language Custom Post Type
+function sgharem_register_language_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Languages',
+            'singular_name' => 'Language',
+            'add_new' => 'Add New Language',
+            'add_new_item' => 'Add New Language',
+            'edit_item' => 'Edit Language',
+            'all_items' => 'All Languages',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-translation',
+        'supports' => array('title', 'page-attributes'),
+        'has_archive' => false,
+    );
+    register_post_type('language', $args);
+}
+add_action('init', 'sgharem_register_language_cpt');
+
+// Add Language Meta Boxes
+function sgharem_language_meta_boxes() {
+    add_meta_box(
+        'language_settings',
+        'Language Settings',
+        'sgharem_language_meta_callback',
+        'language',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_language_meta_boxes');
+
+function sgharem_language_meta_callback($post) {
+    wp_nonce_field('sgharem_language_nonce', 'language_nonce');
+
+    $code = get_post_meta($post->ID, '_language_code', true);
+    $label = get_post_meta($post->ID, '_language_label', true);
+    $url = get_post_meta($post->ID, '_language_url', true);
+    $is_active = get_post_meta($post->ID, '_language_active', true);
+    $is_default = get_post_meta($post->ID, '_language_default', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="language_active">Active</label></th>
+            <td><input type="checkbox" id="language_active" name="language_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="language_default">Default Language</label></th>
+            <td><input type="checkbox" id="language_default" name="language_default" value="1" <?php checked($is_default, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="language_code">Language Code</label></th>
+            <td><input type="text" id="language_code" name="language_code" value="<?php echo esc_attr($code); ?>" class="regular-text" placeholder="e.g. en, zh, vi"></td>
+        </tr>
+        <tr>
+            <th><label for="language_label">Display Label</label></th>
+            <td><input type="text" id="language_label" name="language_label" value="<?php echo esc_attr($label); ?>" class="regular-text" placeholder="e.g. EN, 中文, VI"></td>
+        </tr>
+        <tr>
+            <th><label for="language_url">URL</label></th>
+            <td><input type="text" id="language_url" name="language_url" value="<?php echo esc_attr($url); ?>" class="regular-text" placeholder="e.g. / or https://cn.example.com/"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Order" field to set the display order (lower number = first).</p>
+    <?php
+}
+
+function sgharem_save_language_meta($post_id) {
+    if (!isset($_POST['language_nonce']) || !wp_verify_nonce($_POST['language_nonce'], 'sgharem_language_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['language_code'])) {
+        update_post_meta($post_id, '_language_code', sanitize_text_field($_POST['language_code']));
+    }
+    if (isset($_POST['language_label'])) {
+        update_post_meta($post_id, '_language_label', sanitize_text_field($_POST['language_label']));
+    }
+    if (isset($_POST['language_url'])) {
+        update_post_meta($post_id, '_language_url', esc_url_raw($_POST['language_url']));
+    }
+
+    $is_active = isset($_POST['language_active']) ? '1' : '0';
+    update_post_meta($post_id, '_language_active', $is_active);
+
+    $is_default = isset($_POST['language_default']) ? '1' : '0';
+    update_post_meta($post_id, '_language_default', $is_default);
+}
+add_action('save_post_language', 'sgharem_save_language_meta');
+
+// Get Active Languages
+function sgharem_get_languages() {
+    $languages = get_posts(array(
+        'post_type' => 'language',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_language_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($languages as $lang) {
+        $items[] = array(
+            'code' => get_post_meta($lang->ID, '_language_code', true),
+            'label' => get_post_meta($lang->ID, '_language_label', true),
+            'url' => get_post_meta($lang->ID, '_language_url', true),
+            'is_default' => get_post_meta($lang->ID, '_language_default', true),
+        );
+    }
+    return $items;
+}

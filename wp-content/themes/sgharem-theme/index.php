@@ -2,39 +2,24 @@
 <main id="main">
 
 <!-- Language toggle -->
+<?php $languages = sgharem_get_languages(); ?>
+<?php if (!empty($languages)) : ?>
 <div class="lang-toggle">
-    <button id="btn-en" class="active"><a href="/">EN</a></button>
-    <button id="btn-zh"><a href="/">中文</a></button>
+    <?php foreach ($languages as $lang) : ?>
+    <button class="lang-btn<?php echo $lang['is_default'] === '1' ? ' active' : ''; ?>" data-lang="<?php echo esc_attr($lang['code']); ?>">
+        <a href="<?php echo esc_url($lang['url']); ?>"><?php echo esc_html($lang['label']); ?></a>
+    </button>
+    <?php endforeach; ?>
 </div>
 
 <style>
     .lang-toggle a {
         text-decoration: none;
-        /* remove underline */
         color: inherit;
-        /* follow button color */
         display: block;
-        /* fill button */
     }
 </style>
-
-
-<script>
-    const btnEn = document.getElementById("btn-en");
-    const btnZh = document.getElementById("btn-zh");
-
-    btnEn.addEventListener("click", () => {
-        btnEn.classList.add("active");
-        btnZh.classList.remove("active");
-        document.documentElement.setAttribute("lang", "en");
-    });
-
-    btnZh.addEventListener("click", () => {
-        btnZh.classList.add("active");
-        btnEn.classList.remove("active");
-        document.documentElement.setAttribute("lang", "zh");
-    });
-</script>
+<?php endif; ?>
 <!-- Banner is loaded from header.php using Custom Post Type -->
 
 <?php
