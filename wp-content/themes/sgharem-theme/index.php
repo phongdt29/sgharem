@@ -3,8 +3,8 @@
 
 <!-- Language toggle -->
 <div class="lang-toggle">
-    <button id="btn-en" class="active"><a href="index.html">EN</a></button>
-    <button id="btn-zh"><a href="https://cn..org/">中文</a></button>
+    <button id="btn-en" class="active"><a href="/">EN</a></button>
+    <button id="btn-zh"><a href="/">中文</a></button>
 </div>
 
 <style>
@@ -50,12 +50,12 @@ $gallery_images = sgharem_get_gallery_images();
         <div class="gallery-marquee">
             <div class="marquee-track">
                 <?php foreach ($gallery_images as $image) : ?>
-                <a href="<?php echo esc_url($image['link_url'] ?: '#'); ?>" title="<?php echo esc_attr($image['title']); ?>">
+                <a href="javascript:void(0);" class="gallery-copy-link" data-url="<?php echo esc_url($image['link_url']); ?>" title="Click to copy: <?php echo esc_attr($image['title']); ?>">
                     <img src="<?php echo esc_url($image['image_url']); ?>" alt="<?php echo esc_attr($image['alt_text']); ?>">
                 </a>
                 <?php endforeach; ?>
                 <?php foreach ($gallery_images as $image) : ?>
-                <a href="<?php echo esc_url($image['link_url'] ?: '#'); ?>" title="<?php echo esc_attr($image['title']); ?>">
+                <a href="javascript:void(0);" class="gallery-copy-link" data-url="<?php echo esc_url($image['link_url']); ?>" title="Click to copy: <?php echo esc_attr($image['title']); ?>">
                     <img src="<?php echo esc_url($image['image_url']); ?>" alt="<?php echo esc_attr($image['alt_text']); ?>">
                 </a>
                 <?php endforeach; ?>
@@ -63,6 +63,46 @@ $gallery_images = sgharem_get_gallery_images();
         </div>
     </div>
 </section>
+
+<!-- Copy notification -->
+<div id="copy-notification" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.85); color:#fff; padding:15px 30px; border-radius:8px; z-index:9999; font-size:14px;">
+    Link copied!
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyLinks = document.querySelectorAll('.gallery-copy-link');
+    const notification = document.getElementById('copy-notification');
+
+    copyLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('data-url');
+
+            if (url && url !== '') {
+                navigator.clipboard.writeText(url).then(function() {
+                    notification.style.display = 'block';
+                    setTimeout(function() {
+                        notification.style.display = 'none';
+                    }, 1500);
+                }).catch(function(err) {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = url;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    notification.style.display = 'block';
+                    setTimeout(function() {
+                        notification.style.display = 'none';
+                    }, 1500);
+                });
+            }
+        });
+    });
+});
+</script>
 <?php endif; ?>
 <style>
     .link-card img {
@@ -210,11 +250,27 @@ $services = sgharem_get_services();
         <?php if (!empty($contact['heading'])) : ?>
         <h3><?php echo esc_html($contact['heading']); ?></h3>
         <?php endif; ?>
-        <?php if (!empty($contact['button_text']) && !empty($contact['button_url'])) : ?>
-        <a href="<?php echo esc_url($contact['button_url']); ?>" target="_blank">
-            <?php echo esc_html($contact['button_text']); ?>
-        </a>
+        <?php if (!empty($contact['description'])) : ?>
+        <p style="font-size: 18px; "><?php echo esc_html($contact['description']); ?></p>
         <?php endif; ?>
+        <div class="contact-buttons">
+            <?php if (!empty($contact['btn1_text']) && !empty($contact['btn1_url'])) : ?>
+            <a href="<?php echo esc_url($contact['btn1_url']); ?>" class="btn btn-large" target="_blank"
+                style="font-size: 12px; color: white;"
+                aria-label="<?php echo esc_attr($contact['btn1_text']); ?>"
+                title="<?php echo esc_attr($contact['btn1_text']); ?>">
+                <?php echo esc_html($contact['btn1_icon']); ?> <?php echo esc_html($contact['btn1_text']); ?>
+            </a>
+            <?php endif; ?>
+            <?php if (!empty($contact['btn2_text']) && !empty($contact['btn2_url'])) : ?>
+            <a href="<?php echo esc_url($contact['btn2_url']); ?>" class="btn btn-large btn-telegram" target="_blank"
+                style="font-size: 12px;"
+                aria-label="<?php echo esc_attr($contact['btn2_text']); ?>"
+                title="<?php echo esc_attr($contact['btn2_text']); ?>">
+                <?php echo esc_html($contact['btn2_icon']); ?> <?php echo esc_html($contact['btn2_text']); ?>
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
 </section>
 <?php endif; ?>
@@ -236,8 +292,8 @@ $faqs = sgharem_get_faqs();
         <?php endif; ?>
         <div class="faq-card"
             style="background: linear-gradient(135deg, #000000 0%, #660000 100%); padding: 22px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin: 28px 0;">
-            <?php foreach ($faqs as $faq) : ?>
-            <details open style="margin-bottom:12px; padding:12px; border-radius:6px; background:#ffffff;" itemscope
+            <?php foreach ($faqs as $key => $faq) : ?>
+            <details <?php if($key == 0){ ?> open <?php } ?> style="margin-bottom:12px; padding:12px; border-radius:6px; background:#ffffff;" itemscope
                 itemprop="mainEntity" itemtype="https://schema.org/Question">
                 <summary style="font-weight:700; cursor:pointer;" itemprop="name"
                     title="<?php echo esc_attr($faq['question']); ?>">

@@ -9,11 +9,6 @@
 <?php wp_head(); ?>
 
 <style>
-    .banner::before {
-       
-        background-image: linear-gradient(rgba(0, 0, 0, 0.774), rgba(0, 0, 0, 0.068)), url('../cdn.shortpixel.ai/client/q_loseless%2cret_wait/https_/miuohcetrjihx34xc.com/org/Logo.jpg'), url('../cdn.shortpixel.ai/client/q_loseless%2cret_wait/https_/miuohcetrjihx34xc.com/org/Logo.jpg'), url('../cdn.shortpixel.ai/client/q_loseless%2cret_wait/https_/miuohcetrjihx34xc.com/org/Logo.jpg');
-    }
-
     .lang-toggle {
         position: fixed;
         top: 12px;
@@ -87,7 +82,7 @@
 
 <?php $banner = sgharem_get_active_banner(); ?>
 <?php if ($banner) : ?>
-<section class="banner">
+<section class="banner"<?php if (!empty($banner['image_url'])) : ?> style="background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3)), url('<?php echo esc_url($banner['image_url']); ?>'); background-size: cover; background-position: center;"<?php endif; ?>>
     <div class="container">
         <?php if (!empty($banner['heading'])) : ?>
         <h2 style="font-size: 28px;">

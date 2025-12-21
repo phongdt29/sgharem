@@ -19,7 +19,7 @@ function sgharem_register_banner_cpt() {
         'show_ui' => true,
         'show_in_menu' => true,
         'menu_icon' => 'dashicons-format-image',
-        'supports' => array('title'),
+        'supports' => array('title', 'thumbnail'),
         'has_archive' => false,
     );
     register_post_type('banner', $args);
@@ -70,6 +70,7 @@ function sgharem_banner_meta_callback($post) {
             <td><input type="url" id="banner_button_url" name="banner_button_url" value="<?php echo esc_url($button_url); ?>" class="regular-text"></td>
         </tr>
     </table>
+    <p class="description">Use "Featured Image" (on the right sidebar) to upload the banner background image.</p>
     <?php
 }
 
@@ -116,6 +117,7 @@ function sgharem_get_active_banner() {
             'description' => get_post_meta($banner->ID, '_banner_description', true),
             'button_text' => get_post_meta($banner->ID, '_banner_button_text', true),
             'button_url' => get_post_meta($banner->ID, '_banner_button_url', true),
+            'image_url' => get_the_post_thumbnail_url($banner->ID, 'full'),
         );
     }
     return false;
@@ -275,7 +277,13 @@ function sgharem_gallery_meta_callback($post) {
         </tr>
         <tr>
             <th><label for="gallery_link_url">Link URL</label></th>
-            <td><input type="url" id="gallery_link_url" name="gallery_link_url" value="<?php echo esc_url($link_url); ?>" class="regular-text"></td>
+            <td>
+                <input type="url" id="gallery_link_url" name="gallery_link_url" value="<?php echo esc_url($link_url); ?>" class="regular-text">
+                <?php if (!empty($link_url)) : ?>
+                <button type="button" class="button gallery-copy-btn" data-url="<?php echo esc_url($link_url); ?>" style="margin-left:5px;">Copy</button>
+                <span class="gallery-copy-msg" style="display:none; color:green; margin-left:10px;">Copied!</span>
+                <?php endif; ?>
+            </td>
         </tr>
         <tr>
             <th><label for="gallery_alt_text">Alt Text</label></th>
@@ -283,6 +291,43 @@ function sgharem_gallery_meta_callback($post) {
         </tr>
     </table>
     <p class="description">Use "Featured Image" (on the right sidebar) to upload the gallery image.</p>
+    <script>
+    jQuery(document).ready(function($) {
+        $('.gallery-copy-btn').on('click', function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var url = $btn.attr('data-url');
+            var $msg = $btn.next('.gallery-copy-msg');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(function() {
+                    $msg.fadeIn().delay(1500).fadeOut();
+                }).catch(function() {
+                    galleryCopyFallback(url, $msg);
+                });
+            } else {
+                galleryCopyFallback(url, $msg);
+            }
+        });
+
+        function galleryCopyFallback(text, $msg) {
+            var textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                $msg.fadeIn().delay(1500).fadeOut();
+            } catch (err) {
+                alert('Copy failed. Please copy manually: ' + text);
+            }
+            document.body.removeChild(textArea);
+        }
+    });
+    </script>
     <?php
 }
 
@@ -308,6 +353,162 @@ function sgharem_save_gallery_meta($post_id) {
     update_post_meta($post_id, '_gallery_active', $is_active);
 }
 add_action('save_post_gallery', 'sgharem_save_gallery_meta');
+
+// Add custom columns to Gallery list
+function sgharem_gallery_columns($columns) {
+    $new_columns = array();
+    foreach ($columns as $key => $value) {
+        $new_columns[$key] = $value;
+        if ($key === 'title') {
+            $new_columns['gallery_link'] = 'Link URL';
+            $new_columns['gallery_copy'] = 'Copy';
+        }
+    }
+    return $new_columns;
+}
+add_filter('manage_gallery_posts_columns', 'sgharem_gallery_columns');
+
+function sgharem_gallery_column_content($column, $post_id) {
+    if ($column === 'gallery_link') {
+        $link_url = get_post_meta($post_id, '_gallery_link_url', true);
+        if (!empty($link_url)) {
+            echo '<code style="font-size:11px;max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . esc_html($link_url) . '</code>';
+        } else {
+            echo '—';
+        }
+    }
+    if ($column === 'gallery_copy') {
+        $link_url = get_post_meta($post_id, '_gallery_link_url', true);
+        if (!empty($link_url)) {
+            echo '<button type="button" class="button button-small gallery-list-copy" data-url="' . esc_url($link_url) . '">Copy</button>';
+        } else {
+            echo '—';
+        }
+    }
+}
+add_action('manage_gallery_posts_custom_column', 'sgharem_gallery_column_content', 10, 2);
+
+// Add copy script to Gallery list page
+function sgharem_gallery_admin_scripts() {
+    global $post_type, $pagenow;
+    if ($pagenow === 'edit.php' && $post_type === 'gallery') {
+        ?>
+        <script>
+        jQuery(document).ready(function($) {
+            $('.gallery-list-copy').on('click', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var url = $btn.attr('data-url');
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(function() {
+                        $btn.text('Copied!').css('color', 'green');
+                        setTimeout(function() {
+                            $btn.text('Copy').css('color', '');
+                        }, 1500);
+                    }).catch(function() {
+                        fallbackCopy(url, $btn);
+                    });
+                } else {
+                    fallbackCopy(url, $btn);
+                }
+            });
+
+            function fallbackCopy(text, $btn) {
+                var textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    $btn.text('Copied!').css('color', 'green');
+                    setTimeout(function() {
+                        $btn.text('Copy').css('color', '');
+                    }, 1500);
+                } catch (err) {
+                    alert('Copy failed. Please copy manually: ' + text);
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+        </script>
+        <?php
+    }
+}
+add_action('admin_footer', 'sgharem_gallery_admin_scripts');
+
+// Add Duplicate link to Gallery row actions
+function sgharem_gallery_row_actions($actions, $post) {
+    if ($post->post_type === 'gallery') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_gallery&post=' . $post->ID),
+            'sgharem_duplicate_gallery_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_gallery_row_actions', 10, 2);
+
+// Handle Gallery duplicate action
+function sgharem_duplicate_gallery_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_gallery_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'gallery') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_gallery_link_url', '_gallery_alt_text', '_gallery_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Copy featured image
+        $thumbnail_id = get_post_thumbnail_id($post_id);
+        if ($thumbnail_id) {
+            set_post_thumbnail($new_post_id, $thumbnail_id);
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=gallery'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_gallery', 'sgharem_duplicate_gallery_action');
 
 // Get Active Gallery Images
 function sgharem_get_gallery_images() {
@@ -521,6 +722,77 @@ function sgharem_save_quicklink_meta($post_id) {
     update_post_meta($post_id, '_quicklink_active', $is_active);
 }
 add_action('save_post_quick_link', 'sgharem_save_quicklink_meta');
+
+// Add Duplicate link to Quick Link row actions
+function sgharem_quicklink_row_actions($actions, $post) {
+    if ($post->post_type === 'quick_link') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_quicklink&post=' . $post->ID),
+            'sgharem_duplicate_quicklink_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_quicklink_row_actions', 10, 2);
+
+// Handle Quick Link duplicate action
+function sgharem_duplicate_quicklink_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_quicklink_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'quick_link') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+        'menu_order'   => $post->menu_order,
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_quicklink_url', '_quicklink_description', '_quicklink_button_text', '_quicklink_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Copy featured image
+        $thumbnail_id = get_post_thumbnail_id($post_id);
+        if ($thumbnail_id) {
+            set_post_thumbnail($new_post_id, $thumbnail_id);
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=quick_link'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_quicklink', 'sgharem_duplicate_quicklink_action');
 
 // Get Active Quick Links
 function sgharem_get_quick_links() {
@@ -736,6 +1008,71 @@ function sgharem_save_region_meta($post_id) {
     update_post_meta($post_id, '_region_active', $is_active);
 }
 add_action('save_post_region', 'sgharem_save_region_meta');
+
+// Add Duplicate link to Region row actions
+function sgharem_region_row_actions($actions, $post) {
+    if ($post->post_type === 'region') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_region&post=' . $post->ID),
+            'sgharem_duplicate_region_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_region_row_actions', 10, 2);
+
+// Handle Region duplicate action
+function sgharem_duplicate_region_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_region_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'region') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+        'menu_order'   => $post->menu_order,
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_region_url', '_region_description', '_region_button_text', '_region_icon', '_region_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=region'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_region', 'sgharem_duplicate_region_action');
 
 // Get Active Regions
 function sgharem_get_regions() {
@@ -954,6 +1291,77 @@ function sgharem_save_service_meta($post_id) {
 }
 add_action('save_post_service', 'sgharem_save_service_meta');
 
+// Add Duplicate link to Service row actions
+function sgharem_service_row_actions($actions, $post) {
+    if ($post->post_type === 'service') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_service&post=' . $post->ID),
+            'sgharem_duplicate_service_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_service_row_actions', 10, 2);
+
+// Handle Service duplicate action
+function sgharem_duplicate_service_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_service_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'service') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+        'menu_order'   => $post->menu_order,
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_service_url', '_service_description', '_service_button_text', '_service_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Copy featured image
+        $thumbnail_id = get_post_thumbnail_id($post_id);
+        if ($thumbnail_id) {
+            set_post_thumbnail($new_post_id, $thumbnail_id);
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=service'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_service', 'sgharem_duplicate_service_action');
+
 // Get Active Services
 function sgharem_get_services() {
     $services = get_posts(array(
@@ -1119,8 +1527,13 @@ function sgharem_contact_meta_callback($post) {
     wp_nonce_field('sgharem_contact_nonce', 'contact_nonce');
 
     $heading = get_post_meta($post->ID, '_contact_heading', true);
-    $button_text = get_post_meta($post->ID, '_contact_button_text', true);
-    $button_url = get_post_meta($post->ID, '_contact_button_url', true);
+    $description = get_post_meta($post->ID, '_contact_description', true);
+    $btn1_icon = get_post_meta($post->ID, '_contact_btn1_icon', true);
+    $btn1_text = get_post_meta($post->ID, '_contact_btn1_text', true);
+    $btn1_url = get_post_meta($post->ID, '_contact_btn1_url', true);
+    $btn2_icon = get_post_meta($post->ID, '_contact_btn2_icon', true);
+    $btn2_text = get_post_meta($post->ID, '_contact_btn2_text', true);
+    $btn2_url = get_post_meta($post->ID, '_contact_btn2_url', true);
     $is_active = get_post_meta($post->ID, '_contact_active', true);
     ?>
     <table class="form-table">
@@ -1133,12 +1546,38 @@ function sgharem_contact_meta_callback($post) {
             <td><input type="text" id="contact_heading" name="contact_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
         </tr>
         <tr>
-            <th><label for="contact_button_text">Button Text</label></th>
-            <td><input type="text" id="contact_button_text" name="contact_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text"></td>
+            <th><label for="contact_description">Description</label></th>
+            <td><textarea id="contact_description" name="contact_description" rows="2" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
         </tr>
         <tr>
-            <th><label for="contact_button_url">Button URL</label></th>
-            <td><input type="url" id="contact_button_url" name="contact_button_url" value="<?php echo esc_url($button_url); ?>" class="regular-text"></td>
+            <th colspan="2"><h3>Button 1 (Website)</h3></th>
+        </tr>
+        <tr>
+            <th><label for="contact_btn1_icon">Icon (emoji)</label></th>
+            <td><input type="text" id="contact_btn1_icon" name="contact_btn1_icon" value="<?php echo esc_attr($btn1_icon); ?>" class="regular-text" placeholder="e.g. 🌐"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_btn1_text">Button Text</label></th>
+            <td><input type="text" id="contact_btn1_text" name="contact_btn1_text" value="<?php echo esc_attr($btn1_text); ?>" class="regular-text" placeholder="e.g. Enter SGHarem"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_btn1_url">Button URL</label></th>
+            <td><input type="url" id="contact_btn1_url" name="contact_btn1_url" value="<?php echo esc_url($btn1_url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th colspan="2"><h3>Button 2 (Telegram)</h3></th>
+        </tr>
+        <tr>
+            <th><label for="contact_btn2_icon">Icon (emoji)</label></th>
+            <td><input type="text" id="contact_btn2_icon" name="contact_btn2_icon" value="<?php echo esc_attr($btn2_icon); ?>" class="regular-text" placeholder="e.g. 📱"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_btn2_text">Button Text</label></th>
+            <td><input type="text" id="contact_btn2_text" name="contact_btn2_text" value="<?php echo esc_attr($btn2_text); ?>" class="regular-text" placeholder="e.g. Join Telegram"></td>
+        </tr>
+        <tr>
+            <th><label for="contact_btn2_url">Button URL</label></th>
+            <td><input type="url" id="contact_btn2_url" name="contact_btn2_url" value="<?php echo esc_url($btn2_url); ?>" class="regular-text"></td>
         </tr>
     </table>
     <?php
@@ -1158,11 +1597,30 @@ function sgharem_save_contact_meta($post_id) {
     if (isset($_POST['contact_heading'])) {
         update_post_meta($post_id, '_contact_heading', sanitize_text_field($_POST['contact_heading']));
     }
-    if (isset($_POST['contact_button_text'])) {
-        update_post_meta($post_id, '_contact_button_text', sanitize_text_field($_POST['contact_button_text']));
+    if (isset($_POST['contact_description'])) {
+        update_post_meta($post_id, '_contact_description', sanitize_textarea_field($_POST['contact_description']));
     }
-    if (isset($_POST['contact_button_url'])) {
-        update_post_meta($post_id, '_contact_button_url', esc_url_raw($_POST['contact_button_url']));
+
+    // Button 1
+    $btn1_fields = array('contact_btn1_icon', 'contact_btn1_text');
+    foreach ($btn1_fields as $field) {
+        if (isset($_POST[$field])) {
+            update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+    if (isset($_POST['contact_btn1_url'])) {
+        update_post_meta($post_id, '_contact_btn1_url', esc_url_raw($_POST['contact_btn1_url']));
+    }
+
+    // Button 2
+    $btn2_fields = array('contact_btn2_icon', 'contact_btn2_text');
+    foreach ($btn2_fields as $field) {
+        if (isset($_POST[$field])) {
+            update_post_meta($post_id, '_' . $field, sanitize_text_field($_POST[$field]));
+        }
+    }
+    if (isset($_POST['contact_btn2_url'])) {
+        update_post_meta($post_id, '_contact_btn2_url', esc_url_raw($_POST['contact_btn2_url']));
     }
 
     $is_active = isset($_POST['contact_active']) ? '1' : '0';
@@ -1187,8 +1645,13 @@ function sgharem_get_contact() {
         $contact = $contacts[0];
         return array(
             'heading' => get_post_meta($contact->ID, '_contact_heading', true),
-            'button_text' => get_post_meta($contact->ID, '_contact_button_text', true),
-            'button_url' => get_post_meta($contact->ID, '_contact_button_url', true),
+            'description' => get_post_meta($contact->ID, '_contact_description', true),
+            'btn1_icon' => get_post_meta($contact->ID, '_contact_btn1_icon', true),
+            'btn1_text' => get_post_meta($contact->ID, '_contact_btn1_text', true),
+            'btn1_url' => get_post_meta($contact->ID, '_contact_btn1_url', true),
+            'btn2_icon' => get_post_meta($contact->ID, '_contact_btn2_icon', true),
+            'btn2_text' => get_post_meta($contact->ID, '_contact_btn2_text', true),
+            'btn2_url' => get_post_meta($contact->ID, '_contact_btn2_url', true),
         );
     }
     return false;
@@ -1291,6 +1754,71 @@ function sgharem_save_faq_meta($post_id) {
     update_post_meta($post_id, '_faq_active', $is_active);
 }
 add_action('save_post_faq', 'sgharem_save_faq_meta');
+
+// Add Duplicate link to FAQ row actions
+function sgharem_faq_row_actions($actions, $post) {
+    if ($post->post_type === 'faq') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_faq&post=' . $post->ID),
+            'sgharem_duplicate_faq_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_faq_row_actions', 10, 2);
+
+// Handle FAQ duplicate action
+function sgharem_duplicate_faq_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_faq_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'faq') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+        'menu_order'   => $post->menu_order,
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_faq_question', '_faq_answer', '_faq_link_text', '_faq_link_url', '_faq_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=faq'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_faq', 'sgharem_duplicate_faq_action');
 
 // Get Active FAQs
 function sgharem_get_faqs() {
