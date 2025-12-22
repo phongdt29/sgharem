@@ -2402,3 +2402,220 @@ function sgharem_get_languages() {
     }
     return $items;
 }
+
+// Register Blog Custom Post Type
+function sgharem_register_blog_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Blogs',
+            'singular_name' => 'Blog',
+            'add_new' => 'Add New Blog',
+            'add_new_item' => 'Add New Blog',
+            'edit_item' => 'Edit Blog',
+            'all_items' => 'All Blogs',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_icon' => 'dashicons-admin-post',
+        'supports' => array('title', 'thumbnail', 'page-attributes'),
+        'has_archive' => false,
+    );
+    register_post_type('blog', $args);
+}
+add_action('init', 'sgharem_register_blog_cpt');
+
+// Add Blog Meta Boxes
+function sgharem_blog_meta_boxes() {
+    add_meta_box(
+        'blog_settings',
+        'Blog Settings',
+        'sgharem_blog_meta_callback',
+        'blog',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_blog_meta_boxes');
+
+function sgharem_blog_meta_callback($post) {
+    wp_nonce_field('sgharem_blog_nonce', 'blog_nonce');
+
+    $description = get_post_meta($post->ID, '_blog_description', true);
+    $url = get_post_meta($post->ID, '_blog_url', true);
+    $button_text = get_post_meta($post->ID, '_blog_button_text', true);
+    $is_active = get_post_meta($post->ID, '_blog_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="blog_active">Active</label></th>
+            <td><input type="checkbox" id="blog_active" name="blog_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="blog_description">Description</label></th>
+            <td><textarea id="blog_description" name="blog_description" rows="3" class="large-text"><?php echo esc_textarea($description); ?></textarea></td>
+        </tr>
+        <tr>
+            <th><label for="blog_url">URL</label></th>
+            <td><input type="url" id="blog_url" name="blog_url" value="<?php echo esc_url($url); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="blog_button_text">Button Text</label></th>
+            <td><input type="text" id="blog_button_text" name="blog_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. Read More"></td>
+        </tr>
+    </table>
+    <p class="description">Use "Featured Image" to upload the blog thumbnail.</p>
+    <?php
+}
+
+function sgharem_save_blog_meta($post_id) {
+    if (!isset($_POST['blog_nonce']) || !wp_verify_nonce($_POST['blog_nonce'], 'sgharem_blog_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['blog_description'])) {
+        update_post_meta($post_id, '_blog_description', sanitize_textarea_field($_POST['blog_description']));
+    }
+    if (isset($_POST['blog_url'])) {
+        update_post_meta($post_id, '_blog_url', esc_url_raw($_POST['blog_url']));
+    }
+    if (isset($_POST['blog_button_text'])) {
+        update_post_meta($post_id, '_blog_button_text', sanitize_text_field($_POST['blog_button_text']));
+    }
+
+    $is_active = isset($_POST['blog_active']) ? '1' : '0';
+    update_post_meta($post_id, '_blog_active', $is_active);
+}
+add_action('save_post_blog', 'sgharem_save_blog_meta');
+
+// Get Active Blogs
+function sgharem_get_blogs() {
+    $blogs = get_posts(array(
+        'post_type' => 'blog',
+        'posts_per_page' => -1,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_blog_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($blogs as $blog) {
+        $items[] = array(
+            'title' => get_the_title($blog->ID),
+            'description' => get_post_meta($blog->ID, '_blog_description', true),
+            'url' => get_post_meta($blog->ID, '_blog_url', true),
+            'button_text' => get_post_meta($blog->ID, '_blog_button_text', true),
+            'image_url' => get_the_post_thumbnail_url($blog->ID, 'medium'),
+        );
+    }
+    return $items;
+}
+
+// Blog Section Settings
+function sgharem_register_blog_section_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Section Settings',
+            'singular_name' => 'Section Settings',
+            'add_new' => 'Add Section Settings',
+            'edit_item' => 'Edit Section Settings',
+            'all_items' => 'Section Settings',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=blog',
+        'supports' => array('title'),
+        'has_archive' => false,
+    );
+    register_post_type('blog_section', $args);
+}
+add_action('init', 'sgharem_register_blog_section_cpt');
+
+function sgharem_blog_section_meta_boxes() {
+    add_meta_box(
+        'blog_section_settings',
+        'Section Settings',
+        'sgharem_blog_section_meta_callback',
+        'blog_section',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_blog_section_meta_boxes');
+
+function sgharem_blog_section_meta_callback($post) {
+    wp_nonce_field('sgharem_blog_section_nonce', 'blog_section_nonce');
+    $heading = get_post_meta($post->ID, '_blog_section_heading', true);
+    $subtitle = get_post_meta($post->ID, '_blog_section_subtitle', true);
+    $is_active = get_post_meta($post->ID, '_blog_section_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="blog_section_active">Active</label></th>
+            <td><input type="checkbox" id="blog_section_active" name="blog_section_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="blog_section_heading">Section Heading</label></th>
+            <td><input type="text" id="blog_section_heading" name="blog_section_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
+        </tr>
+        <tr>
+            <th><label for="blog_section_subtitle">Section Subtitle</label></th>
+            <td><textarea id="blog_section_subtitle" name="blog_section_subtitle" rows="2" class="large-text"><?php echo esc_textarea($subtitle); ?></textarea></td>
+        </tr>
+    </table>
+    <?php
+}
+
+function sgharem_save_blog_section_meta($post_id) {
+    if (!isset($_POST['blog_section_nonce']) || !wp_verify_nonce($_POST['blog_section_nonce'], 'sgharem_blog_section_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['blog_section_heading'])) {
+        update_post_meta($post_id, '_blog_section_heading', sanitize_text_field($_POST['blog_section_heading']));
+    }
+    if (isset($_POST['blog_section_subtitle'])) {
+        update_post_meta($post_id, '_blog_section_subtitle', sanitize_textarea_field($_POST['blog_section_subtitle']));
+    }
+    $is_active = isset($_POST['blog_section_active']) ? '1' : '0';
+    update_post_meta($post_id, '_blog_section_active', $is_active);
+}
+add_action('save_post_blog_section', 'sgharem_save_blog_section_meta');
+
+function sgharem_get_blog_section() {
+    $sections = get_posts(array(
+        'post_type' => 'blog_section',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => '_blog_section_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    if (!empty($sections)) {
+        return array(
+            'heading' => get_post_meta($sections[0]->ID, '_blog_section_heading', true),
+            'subtitle' => get_post_meta($sections[0]->ID, '_blog_section_subtitle', true),
+        );
+    }
+    return false;
+}

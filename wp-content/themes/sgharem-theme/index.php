@@ -228,6 +228,127 @@ $services = sgharem_get_services();
 </section>
 <?php endif; ?>
 
+
+<!-- Blog start -->
+<?php
+$blog_section = sgharem_get_blog_section();
+$blogs = sgharem_get_blogs();
+?>
+<?php if ($blog_section && !empty($blogs)) : ?>
+<section class="blog-section">
+    <div class="container">
+        <?php if (!empty($blog_section['heading'])) : ?>
+        <h2 class="section-title"><?php echo esc_html($blog_section['heading']); ?></h2>
+        <?php endif; ?>
+        <?php if (!empty($blog_section['subtitle'])) : ?>
+        <p class="section-subtitle"><?php echo esc_html($blog_section['subtitle']); ?></p>
+        <?php endif; ?>
+        <div class="blog-grid">
+            <?php foreach ($blogs as $blog) : ?>
+            <div class="blog-card">
+                <?php if (!empty($blog['image_url'])) : ?>
+                <a href="<?php echo esc_url($blog['url'] ?: '#'); ?>" target="_blank">
+                    <img src="<?php echo esc_url($blog['image_url']); ?>" alt="<?php echo esc_attr($blog['title']); ?>" class="blog-image">
+                </a>
+                <?php endif; ?>
+                <div class="blog-content">
+                    <h3 class="blog-title">
+                        <a href="<?php echo esc_url($blog['url'] ?: '#'); ?>" target="_blank"><?php echo esc_html($blog['title']); ?></a>
+                    </h3>
+                    <?php if (!empty($blog['description'])) : ?>
+                    <p class="blog-description"><?php echo esc_html($blog['description']); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($blog['button_text']) && !empty($blog['url'])) : ?>
+                    <a href="<?php echo esc_url($blog['url']); ?>" class="blog-btn" target="_blank">
+                        <?php echo esc_html($blog['button_text']); ?> →
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+<style>
+.blog-section {
+    padding: 60px 0;
+    background: #f8f9fa;
+}
+.blog-section .section-title {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+.blog-section .section-subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 40px;
+}
+.blog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+.blog-card {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+.blog-card:hover {
+    transform: translateY(-5px);
+}
+.blog-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.blog-content {
+    padding: 20px;
+}
+.blog-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.blog-title a {
+    color: #333;
+    text-decoration: none;
+}
+.blog-title a:hover {
+    color: #7E0C0C;
+}
+.blog-description {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+.blog-btn {
+    display: inline-block;
+    color: #7E0C0C;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 14px;
+}
+.blog-btn:hover {
+    text-decoration: underline;
+}
+@media (max-width: 992px) {
+    .blog-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 576px) {
+    .blog-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+<?php endif; ?>
+<!-- Blog end -->
+
 <?php $contact = sgharem_get_contact(); ?>
 <?php if ($contact) : ?>
 <section class="contact">
