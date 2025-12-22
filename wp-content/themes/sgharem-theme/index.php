@@ -229,7 +229,7 @@ $services = sgharem_get_services();
         <div class="seotext-more-content" id="seotext-more" style="display: none;">
             <p><?php echo nl2br(esc_html($seotext['content_more'])); ?></p>
         </div>
-        <button type="button" class="seotext-toggle-btn" id="seotext-toggle">
+        <button type="button" class="btn btn-view-more" id="seotext-toggle">
             <?php echo esc_html($seotext['button_text'] ?: 'Show More'); ?> <span class="toggle-icon">▼</span>
         </button>
         <script>
