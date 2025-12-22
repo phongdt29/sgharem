@@ -267,6 +267,13 @@ $blogs = sgharem_get_blogs();
             </div>
             <?php endforeach; ?>
         </div>
+        <?php if (!empty($blog_section['button_text']) && !empty($blog_section['button_url'])) : ?>
+        <div class="blog-view-more">
+            <a href="<?php echo esc_url($blog_section['button_url']); ?>" class="btn btn-view-more" target="_blank">
+                <?php echo esc_html($blog_section['button_text']); ?>
+            </a>
+        </div>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -334,6 +341,23 @@ $blogs = sgharem_get_blogs();
 }
 .blog-btn:hover {
     text-decoration: underline;
+}
+.blog-view-more {
+    text-align: center;
+    margin-top: 40px;
+}
+.btn-view-more {
+    display: inline-block;
+    padding: 12px 30px;
+    background: #7E0C0C;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+.btn-view-more:hover {
+    background: #5a0909;
 }
 @media (max-width: 992px) {
     .blog-grid {

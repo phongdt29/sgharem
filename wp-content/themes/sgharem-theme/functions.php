@@ -2494,6 +2494,77 @@ function sgharem_save_blog_meta($post_id) {
 }
 add_action('save_post_blog', 'sgharem_save_blog_meta');
 
+// Add Duplicate link to Blog row actions
+function sgharem_blog_row_actions($actions, $post) {
+    if ($post->post_type === 'blog') {
+        $duplicate_url = wp_nonce_url(
+            admin_url('admin.php?action=sgharem_duplicate_blog&post=' . $post->ID),
+            'sgharem_duplicate_blog_' . $post->ID
+        );
+        $actions['duplicate'] = '<a href="' . esc_url($duplicate_url) . '" title="Duplicate this item">Duplicate</a>';
+    }
+    return $actions;
+}
+add_filter('post_row_actions', 'sgharem_blog_row_actions', 10, 2);
+
+// Handle Blog duplicate action
+function sgharem_duplicate_blog_action() {
+    if (!isset($_GET['post']) || !isset($_GET['_wpnonce'])) {
+        wp_die('Invalid request.');
+    }
+
+    $post_id = intval($_GET['post']);
+
+    if (!wp_verify_nonce($_GET['_wpnonce'], 'sgharem_duplicate_blog_' . $post_id)) {
+        wp_die('Security check failed.');
+    }
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('You do not have permission to duplicate posts.');
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'blog') {
+        wp_die('Post not found.');
+    }
+
+    // Create duplicate post
+    $new_post = array(
+        'post_title'   => $post->post_title . ' (Copy)',
+        'post_status'  => 'draft',
+        'post_type'    => $post->post_type,
+        'post_author'  => get_current_user_id(),
+        'menu_order'   => $post->menu_order,
+    );
+
+    $new_post_id = wp_insert_post($new_post);
+
+    if ($new_post_id) {
+        // Copy all meta data
+        $meta_keys = array('_blog_description', '_blog_url', '_blog_button_text', '_blog_active');
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($post_id, $key, true);
+            if ($value) {
+                update_post_meta($new_post_id, $key, $value);
+            }
+        }
+
+        // Copy featured image
+        $thumbnail_id = get_post_thumbnail_id($post_id);
+        if ($thumbnail_id) {
+            set_post_thumbnail($new_post_id, $thumbnail_id);
+        }
+
+        // Redirect to edit the new post
+        wp_redirect(admin_url('post.php?action=edit&post=' . $new_post_id));
+        exit;
+    }
+
+    wp_redirect(admin_url('edit.php?post_type=blog'));
+    exit;
+}
+add_action('admin_action_sgharem_duplicate_blog', 'sgharem_duplicate_blog_action');
+
 // Get Active Blogs
 function sgharem_get_blogs() {
     $blogs = get_posts(array(
@@ -2558,6 +2629,8 @@ function sgharem_blog_section_meta_callback($post) {
     wp_nonce_field('sgharem_blog_section_nonce', 'blog_section_nonce');
     $heading = get_post_meta($post->ID, '_blog_section_heading', true);
     $subtitle = get_post_meta($post->ID, '_blog_section_subtitle', true);
+    $button_text = get_post_meta($post->ID, '_blog_section_button_text', true);
+    $button_url = get_post_meta($post->ID, '_blog_section_button_url', true);
     $is_active = get_post_meta($post->ID, '_blog_section_active', true);
     ?>
     <table class="form-table">
@@ -2572,6 +2645,17 @@ function sgharem_blog_section_meta_callback($post) {
         <tr>
             <th><label for="blog_section_subtitle">Section Subtitle</label></th>
             <td><textarea id="blog_section_subtitle" name="blog_section_subtitle" rows="2" class="large-text"><?php echo esc_textarea($subtitle); ?></textarea></td>
+        </tr>
+        <tr>
+            <th colspan="2"><h3>View More Button</h3></th>
+        </tr>
+        <tr>
+            <th><label for="blog_section_button_text">Button Text</label></th>
+            <td><input type="text" id="blog_section_button_text" name="blog_section_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. View All Blogs"></td>
+        </tr>
+        <tr>
+            <th><label for="blog_section_button_url">Button URL</label></th>
+            <td><input type="url" id="blog_section_button_url" name="blog_section_button_url" value="<?php echo esc_url($button_url); ?>" class="regular-text"></td>
         </tr>
     </table>
     <?php
@@ -2594,6 +2678,12 @@ function sgharem_save_blog_section_meta($post_id) {
     if (isset($_POST['blog_section_subtitle'])) {
         update_post_meta($post_id, '_blog_section_subtitle', sanitize_textarea_field($_POST['blog_section_subtitle']));
     }
+    if (isset($_POST['blog_section_button_text'])) {
+        update_post_meta($post_id, '_blog_section_button_text', sanitize_text_field($_POST['blog_section_button_text']));
+    }
+    if (isset($_POST['blog_section_button_url'])) {
+        update_post_meta($post_id, '_blog_section_button_url', esc_url_raw($_POST['blog_section_button_url']));
+    }
     $is_active = isset($_POST['blog_section_active']) ? '1' : '0';
     update_post_meta($post_id, '_blog_section_active', $is_active);
 }
@@ -2615,6 +2705,8 @@ function sgharem_get_blog_section() {
         return array(
             'heading' => get_post_meta($sections[0]->ID, '_blog_section_heading', true),
             'subtitle' => get_post_meta($sections[0]->ID, '_blog_section_subtitle', true),
+            'button_text' => get_post_meta($sections[0]->ID, '_blog_section_button_text', true),
+            'button_url' => get_post_meta($sections[0]->ID, '_blog_section_button_url', true),
         );
     }
     return false;
