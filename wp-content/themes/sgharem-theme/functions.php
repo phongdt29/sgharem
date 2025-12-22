@@ -163,6 +163,8 @@ function sgharem_seotext_meta_callback($post) {
 
     $heading = get_post_meta($post->ID, '_seotext_heading', true);
     $content = get_post_meta($post->ID, '_seotext_content', true);
+    $content_more = get_post_meta($post->ID, '_seotext_content_more', true);
+    $button_text = get_post_meta($post->ID, '_seotext_button_text', true);
     $is_active = get_post_meta($post->ID, '_seotext_active', true);
     ?>
     <table class="form-table">
@@ -175,8 +177,18 @@ function sgharem_seotext_meta_callback($post) {
             <td><input type="text" id="seotext_heading" name="seotext_heading" value="<?php echo esc_attr($heading); ?>" class="regular-text"></td>
         </tr>
         <tr>
-            <th><label for="seotext_content">Content</label></th>
-            <td><textarea id="seotext_content" name="seotext_content" rows="5" class="large-text"><?php echo esc_textarea($content); ?></textarea></td>
+            <th><label for="seotext_content">Content (Visible)</label></th>
+            <td><textarea id="seotext_content" name="seotext_content" rows="4" class="large-text"><?php echo esc_textarea($content); ?></textarea>
+            <p class="description">This content is always visible.</p></td>
+        </tr>
+        <tr>
+            <th><label for="seotext_content_more">Content (Hidden - Show More)</label></th>
+            <td><textarea id="seotext_content_more" name="seotext_content_more" rows="6" class="large-text"><?php echo esc_textarea($content_more); ?></textarea>
+            <p class="description">This content is hidden until user clicks "Show More" button.</p></td>
+        </tr>
+        <tr>
+            <th><label for="seotext_button_text">Button Text</label></th>
+            <td><input type="text" id="seotext_button_text" name="seotext_button_text" value="<?php echo esc_attr($button_text); ?>" class="regular-text" placeholder="e.g. Show More"></td>
         </tr>
     </table>
     <?php
@@ -198,6 +210,12 @@ function sgharem_save_seotext_meta($post_id) {
     }
     if (isset($_POST['seotext_content'])) {
         update_post_meta($post_id, '_seotext_content', sanitize_textarea_field($_POST['seotext_content']));
+    }
+    if (isset($_POST['seotext_content_more'])) {
+        update_post_meta($post_id, '_seotext_content_more', sanitize_textarea_field($_POST['seotext_content_more']));
+    }
+    if (isset($_POST['seotext_button_text'])) {
+        update_post_meta($post_id, '_seotext_button_text', sanitize_text_field($_POST['seotext_button_text']));
     }
 
     $is_active = isset($_POST['seotext_active']) ? '1' : '0';
@@ -223,6 +241,8 @@ function sgharem_get_active_seotext() {
         return array(
             'heading' => get_post_meta($seotext->ID, '_seotext_heading', true),
             'content' => get_post_meta($seotext->ID, '_seotext_content', true),
+            'content_more' => get_post_meta($seotext->ID, '_seotext_content_more', true),
+            'button_text' => get_post_meta($seotext->ID, '_seotext_button_text', true),
         );
     }
     return false;

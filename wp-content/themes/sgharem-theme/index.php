@@ -224,6 +224,56 @@ $services = sgharem_get_services();
         <?php if (!empty($seotext['content'])) : ?>
         <p><?php echo nl2br(esc_html($seotext['content'])); ?></p>
         <?php endif; ?>
+
+        <?php if (!empty($seotext['content_more'])) : ?>
+        <div class="seotext-more-content" id="seotext-more" style="display: none;">
+            <p><?php echo nl2br(esc_html($seotext['content_more'])); ?></p>
+        </div>
+        <button type="button" class="seotext-toggle-btn" id="seotext-toggle">
+            <?php echo esc_html($seotext['button_text'] ?: 'Show More'); ?> <span class="toggle-icon">▼</span>
+        </button>
+        <script>
+        document.getElementById('seotext-toggle').addEventListener('click', function() {
+            var content = document.getElementById('seotext-more');
+            var btn = this;
+            var icon = btn.querySelector('.toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+                btn.childNodes[0].textContent = 'Show Less ';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+                btn.childNodes[0].textContent = '<?php echo esc_js($seotext['button_text'] ?: 'Show More'); ?> ';
+            }
+        });
+        </script>
+        <style>
+        .seotext-more-content {
+            margin-top: 15px;
+        }
+        .seotext-toggle-btn {
+            margin-top: 20px;
+            padding: 10px 25px;
+            background: transparent;
+            border: 2px solid #7E0C0C;
+            color: #7E0C0C;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .seotext-toggle-btn:hover {
+            background: #7E0C0C;
+            color: #fff;
+        }
+        .toggle-icon {
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        </style>
+        <?php endif; ?>
     </div>
 </section>
 <?php endif; ?>
