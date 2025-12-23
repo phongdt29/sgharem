@@ -2731,3 +2731,105 @@ function sgharem_get_blog_section() {
     }
     return false;
 }
+
+// Register Footer Widget Custom Post Type
+function sgharem_register_footer_widget_cpt() {
+    $args = array(
+        'labels' => array(
+            'name' => 'Footer Widgets',
+            'singular_name' => 'Footer Widget',
+            'add_new' => 'Add New Widget',
+            'add_new_item' => 'Add New Footer Widget',
+            'edit_item' => 'Edit Footer Widget',
+            'all_items' => 'All Widgets',
+        ),
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => 'edit.php?post_type=footer_link',
+        'supports' => array('title', 'page-attributes'),
+        'has_archive' => false,
+    );
+    register_post_type('footer_widget', $args);
+}
+add_action('init', 'sgharem_register_footer_widget_cpt');
+
+// Add Footer Widget Meta Boxes
+function sgharem_footer_widget_meta_boxes() {
+    add_meta_box(
+        'footer_widget_settings',
+        'Widget Settings',
+        'sgharem_footer_widget_meta_callback',
+        'footer_widget',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'sgharem_footer_widget_meta_boxes');
+
+function sgharem_footer_widget_meta_callback($post) {
+    wp_nonce_field('sgharem_footer_widget_nonce', 'footer_widget_nonce');
+
+    $content = get_post_meta($post->ID, '_footer_widget_content', true);
+    $is_active = get_post_meta($post->ID, '_footer_widget_active', true);
+    ?>
+    <table class="form-table">
+        <tr>
+            <th><label for="footer_widget_active">Active</label></th>
+            <td><input type="checkbox" id="footer_widget_active" name="footer_widget_active" value="1" <?php checked($is_active, '1'); ?>></td>
+        </tr>
+        <tr>
+            <th><label for="footer_widget_content">Widget Content (HTML)</label></th>
+            <td>
+                <textarea id="footer_widget_content" name="footer_widget_content" rows="10" class="large-text code"><?php echo esc_textarea($content); ?></textarea>
+                <p class="description">Enter HTML content for this widget column. Supports: headings, links, lists, text, etc.</p>
+            </td>
+        </tr>
+    </table>
+    <p class="description">Use "Order" field to set column position (1=first column, 2=second, etc.)</p>
+    <?php
+}
+
+function sgharem_save_footer_widget_meta($post_id) {
+    if (!isset($_POST['footer_widget_nonce']) || !wp_verify_nonce($_POST['footer_widget_nonce'], 'sgharem_footer_widget_nonce')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (isset($_POST['footer_widget_content'])) {
+        update_post_meta($post_id, '_footer_widget_content', wp_kses_post($_POST['footer_widget_content']));
+    }
+
+    $is_active = isset($_POST['footer_widget_active']) ? '1' : '0';
+    update_post_meta($post_id, '_footer_widget_active', $is_active);
+}
+add_action('save_post_footer_widget', 'sgharem_save_footer_widget_meta');
+
+// Get Active Footer Widgets
+function sgharem_get_footer_widgets() {
+    $widgets = get_posts(array(
+        'post_type' => 'footer_widget',
+        'posts_per_page' => 4,
+        'orderby' => 'menu_order',
+        'order' => 'ASC',
+        'meta_query' => array(
+            array(
+                'key' => '_footer_widget_active',
+                'value' => '1',
+            )
+        )
+    ));
+
+    $items = array();
+    foreach ($widgets as $widget) {
+        $items[] = array(
+            'title' => get_the_title($widget->ID),
+            'content' => get_post_meta($widget->ID, '_footer_widget_content', true),
+        );
+    }
+    return $items;
+}
