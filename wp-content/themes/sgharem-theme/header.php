@@ -85,11 +85,11 @@
 <section class="banner"<?php if (!empty($banner['image_url'])) : ?> style="background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3)), url('<?php echo esc_url($banner['image_url']); ?>'); background-size: cover; background-position: center;"<?php endif; ?>>
     <div class="container">
         <?php if (!empty($banner['heading'])) : ?>
-        <h2 style="font-size: 28px;">
+        <h1 style="font-size: 28px;">
             <a href="<?php echo home_url(); ?>" style="color: white;text-decoration: none;">
                 <?php echo esc_html($banner['heading']); ?>
             </a>
-        </h2>
+        </h1>
         <?php endif; ?>
 
         <?php if (!empty($banner['description'])) : ?>

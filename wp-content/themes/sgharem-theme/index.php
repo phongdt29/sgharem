@@ -75,7 +75,7 @@ $gallery_images = sgharem_get_gallery_images();
 <section class="photo-gallery">
     <div class="container">
         <?php if (!empty($gallery_section['heading'])) : ?>
-        <h3><?php echo esc_html($gallery_section['heading']); ?></h3>
+        <h2><?php echo esc_html($gallery_section['heading']); ?></h2>
         <?php endif; ?>
         <div class="gallery-marquee">
             <div class="marquee-track">
