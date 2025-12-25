@@ -1,25 +1,70 @@
 <?php get_header(); ?>
 <main id="main">
 
-<!-- Language toggle -->
-<?php $languages = sgharem_get_languages(); ?>
-<?php if (!empty($languages)) : ?>
+<!-- Google Translate Buttons -->
 <div class="lang-toggle">
-    <?php foreach ($languages as $lang) : ?>
-    <button class="lang-btn<?php echo $lang['is_default'] === '1' ? ' active' : ''; ?>" data-lang="<?php echo esc_attr($lang['code']); ?>">
-        <a href="<?php echo esc_url($lang['url']); ?>"><?php echo esc_html($lang['label']); ?></a>
-    </button>
-    <?php endforeach; ?>
+    <button class="lang-btn active" onclick="changeLanguage('en')">English</button>
+    <button class="lang-btn" onclick="changeLanguage('zh-CN')">中文</button>
 </div>
 
+<div id="google_translate_element" style="display:none;"></div>
+<script type="text/javascript">
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'en,zh-CN',
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+
+function changeLanguage(lang) {
+    var selectField = document.querySelector('.goog-te-combo');
+    if (selectField) {
+        selectField.value = lang;
+        selectField.dispatchEvent(new Event('change'));
+
+        // Update active button
+        document.querySelectorAll('.lang-toggle .lang-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+    }
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 <style>
-    .lang-toggle a {
-        text-decoration: none;
-        color: inherit;
-        display: block;
+    .lang-toggle {
+        padding: 10px 0;
+    }
+    .lang-toggle .lang-btn {
+        padding: 8px 16px;
+        margin-right: 5px;
+        border: 1px solid #ccc;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+    .lang-toggle .lang-btn:hover {
+        background: #f0f0f0;
+    }
+    .lang-toggle .lang-btn.active {
+        background: #7E0C0C;
+        color: #fff;
+        border-color: #7E0C0C;
+    }
+    /* Hide Google Translate bar */
+    .skiptranslate iframe {
+        display: none !important;
+    }
+    body {
+        top: 0 !important;
+    }
+    .goog-te-banner-frame {
+        display: none !important;
     }
 </style>
-<?php endif; ?>
 <!-- Banner is loaded from header.php using Custom Post Type -->
 
 <?php
