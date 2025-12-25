@@ -37,7 +37,7 @@ function changeLanguage(lang) {
     .lang-toggle {
         padding: 10px 0;
     }
-    .lang-toggle .lang-btn {
+    /* .lang-toggle .lang-btn {
         padding: 8px 16px;
         margin-right: 5px;
         border: 1px solid #ccc;
@@ -53,7 +53,7 @@ function changeLanguage(lang) {
         background: #7E0C0C;
         color: #fff;
         border-color: #7E0C0C;
-    }
+    } */
     /* Hide Google Translate bar */
     .skiptranslate iframe {
         display: none !important;
