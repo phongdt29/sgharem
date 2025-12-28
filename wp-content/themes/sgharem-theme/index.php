@@ -225,7 +225,7 @@ $services = sgharem_get_services();
 <section class="services" id="services">
     <div class="container">
         <?php if (!empty($services_section['heading'])) : ?>
-        <h3 style="color: white;"><?php echo esc_html($services_section['heading']); ?></h3>
+        <h2 style="color: white;"><?php echo esc_html($services_section['heading']); ?></h2>
         <?php endif; ?>
         <?php if (!empty($services_section['subtitle'])) : ?>
         <p class="services-subtitle" style="color: white;">
@@ -473,7 +473,7 @@ $blogs = sgharem_get_blogs();
 <section class="contact">
     <div class="container">
         <?php if (!empty($contact['heading'])) : ?>
-        <h3><?php echo esc_html($contact['heading']); ?></h3>
+        <h2><?php echo esc_html($contact['heading']); ?></h2>
         <?php endif; ?>
         <?php if (!empty($contact['description'])) : ?>
         <p style="font-size: 18px; "><?php echo esc_html($contact['description']); ?></p>
@@ -513,7 +513,7 @@ $faqs = sgharem_get_faqs();
 <section class="faq" id="faq" style="background: linear-gradient(135deg, #000000 0%, #660000 100%);">
     <div class="container">
         <?php if (!empty($faq_section['heading'])) : ?>
-        <h3 style="color: white;"><?php echo esc_html($faq_section['heading']); ?></h3>
+        <h2 style="color: white;"><?php echo esc_html($faq_section['heading']); ?></h2>
         <?php endif; ?>
         <div class="faq-card"
             style="background: linear-gradient(135deg, #000000 0%, #660000 100%); padding: 22px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); margin: 28px 0;">
