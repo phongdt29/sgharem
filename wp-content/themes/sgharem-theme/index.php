@@ -80,12 +80,12 @@ $gallery_images = sgharem_get_gallery_images();
         <div class="gallery-marquee">
             <div class="marquee-track">
                 <?php foreach ($gallery_images as $image) : ?>
-                <a href="<?php echo esc_url($image['link_url']); ?>"  data-url="<?php echo esc_url($image['link_url']); ?>" title="Click to copy: <?php echo esc_attr($image['title']); ?>">
+                <a href="<?php echo esc_url($image['link_url']); ?>" title="<?php echo esc_attr($image['title']); ?>">
                     <img src="<?php echo esc_url($image['image_url']); ?>" alt="<?php echo esc_attr($image['alt_text']); ?>">
                 </a>
                 <?php endforeach; ?>
                 <?php foreach ($gallery_images as $image) : ?>
-                <a href="<?php echo esc_url($image['link_url']); ?>" data-url="<?php echo esc_url($image['link_url']); ?>" title="Click to copy: <?php echo esc_attr($image['title']); ?>">
+                <a href="<?php echo esc_url($image['link_url']); ?>" title="<?php echo esc_attr($image['title']); ?>">
                     <img src="<?php echo esc_url($image['image_url']); ?>" alt="<?php echo esc_attr($image['alt_text']); ?>">
                 </a>
                 <?php endforeach; ?>
@@ -99,7 +99,7 @@ $gallery_images = sgharem_get_gallery_images();
     Link copied!
 </div>
 
-<script>
+<!-- <script>
 document.addEventListener('DOMContentLoaded', function() {
     const copyLinks = document.querySelectorAll('.gallery-copy-link');
     const notification = document.getElementById('copy-notification');
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-</script>
+</script> -->
 <?php endif; ?>
 <style>
     .link-card img {
