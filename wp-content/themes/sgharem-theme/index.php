@@ -72,7 +72,7 @@ $gallery_section = sgharem_get_gallery_section();
 $gallery_images = sgharem_get_gallery_images();
 ?>
 <?php if ($gallery_section && !empty($gallery_images)) : ?>
-<section class="photo-gallery">
+<section id="photo-gallery" class="photo-gallery">
     <div class="container">
         <?php if (!empty($gallery_section['heading'])) : ?>
         <h2><?php echo esc_html($gallery_section['heading']); ?></h2>
@@ -137,9 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
     .link-card img {
         width: 100%;
-        height: 398px;
-        /* 你可以改成 200px 或 220px */
-        object-fit: cover;
         border-radius: 8px;
         margin-bottom: 10px;
     }
@@ -150,7 +147,7 @@ $quicklinks_section = sgharem_get_quicklinks_section();
 $quick_links = sgharem_get_quick_links();
 ?>
 <?php if ($quicklinks_section && !empty($quick_links)) : ?>
-<section class="quick-links">
+<section id="quick-links" class="quick-links">
     <div class="container">
         <?php if (!empty($quicklinks_section['heading'])) : ?>
         <h3 style="font-size: 32px;color: white;">
@@ -260,7 +257,7 @@ $services = sgharem_get_services();
 
 <?php $seotext = sgharem_get_active_seotext(); ?>
 <?php if ($seotext) : ?>
-<section class="seo-text">
+<section id="seo-text" class="seo-text">
     <div class="container">
         <?php if (!empty($seotext['heading'])) : ?>
         <h2><?php echo esc_html($seotext['heading']); ?></h2>
@@ -330,7 +327,7 @@ $blog_section = sgharem_get_blog_section();
 $blogs = sgharem_get_blogs();
 ?>
 <?php if ($blog_section && !empty($blogs)) : ?>
-<section class="blog-section">
+<section id="blog-section" class="blog-section">
     <div class="container">
         <?php if (!empty($blog_section['heading'])) : ?>
         <h2 class="section-title"><?php echo esc_html($blog_section['heading']); ?></h2>
@@ -470,7 +467,7 @@ $blogs = sgharem_get_blogs();
 
 <?php $contact = sgharem_get_contact(); ?>
 <?php if ($contact) : ?>
-<section class="contact">
+<section id="contact" class="contact">
     <div class="container">
         <?php if (!empty($contact['heading'])) : ?>
         <h2><?php echo esc_html($contact['heading']); ?></h2>

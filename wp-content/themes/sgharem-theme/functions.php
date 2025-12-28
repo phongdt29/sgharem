@@ -4,6 +4,13 @@ function sgharem_assets() {
 }
 add_action('wp_enqueue_scripts', 'sgharem_assets');
 
+// Add theme support for title tag
+function sgharem_theme_setup() {
+    add_theme_support('title-tag');
+    add_theme_support('post-thumbnails');
+}
+add_action('after_setup_theme', 'sgharem_theme_setup');
+
 // Register Banner Custom Post Type
 function sgharem_register_banner_cpt() {
     $args = array(
