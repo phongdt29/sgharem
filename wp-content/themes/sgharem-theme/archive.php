@@ -58,9 +58,9 @@
                 </a>
                 <?php endif; ?>
                 <div class="blog-content">
-                    <h3 class="blog-title">
+                    <h2 class="blog-title">
                         <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                    </h3>
+                    </h2>
                     <div class="blog-meta">
                         <span class="blog-date"><?php echo get_the_date(); ?></span>
                     </div>

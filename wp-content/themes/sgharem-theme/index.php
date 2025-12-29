@@ -150,9 +150,9 @@ $quick_links = sgharem_get_quick_links();
 <section id="quick-links" class="quick-links">
     <div class="container">
         <?php if (!empty($quicklinks_section['heading'])) : ?>
-        <h3 style="font-size: 32px;color: white;">
+        <h2 style="font-size: 32px;color: white;">
             <?php echo esc_html($quicklinks_section['heading']); ?>
-        </h3>
+        </h2>
         <?php endif; ?>
         <div class="links-grid">
             <?php foreach ($quick_links as $link) : ?>
@@ -188,7 +188,7 @@ $regions = sgharem_get_regions();
 <section class="regions" id="regions">
     <div class="container">
         <?php if (!empty($regions_section['heading'])) : ?>
-        <h3 style="color: white;"><?php echo esc_html($regions_section['heading']); ?></h3>
+        <h2 style="color: white;"><?php echo esc_html($regions_section['heading']); ?></h2>
         <?php endif; ?>
         <?php if (!empty($regions_section['subtitle'])) : ?>
         <p class="regions-subtitle"><?php echo esc_html($regions_section['subtitle']); ?></p>
@@ -344,9 +344,9 @@ $blogs = sgharem_get_blogs();
                 </a>
                 <?php endif; ?>
                 <div class="blog-content">
-                    <h3 class="blog-title">
+                    <h2 class="blog-title">
                         <a href="<?php echo esc_url($blog['url'] ?: '#'); ?>" target="_blank"><?php echo esc_html($blog['title']); ?></a>
-                    </h3>
+                    </h2>
                     <?php if (!empty($blog['description'])) : ?>
                     <p class="blog-description"><?php echo esc_html($blog['description']); ?></p>
                     <?php endif; ?>
