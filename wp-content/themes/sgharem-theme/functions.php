@@ -4,12 +4,102 @@ function sgharem_assets() {
 }
 add_action('wp_enqueue_scripts', 'sgharem_assets');
 
-// Add theme support for title tag
+// Add theme support
 function sgharem_theme_setup() {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    add_theme_support('html5', array('search-form', 'comment-form', 'comment-list', 'gallery', 'caption'));
+    add_theme_support('automatic-feed-links');
+    add_theme_support('custom-logo');
+
+    // Register navigation menus
+    register_nav_menus(array(
+        'primary' => 'Primary Menu',
+        'footer' => 'Footer Menu',
+    ));
 }
 add_action('after_setup_theme', 'sgharem_theme_setup');
+
+// Register Widget Areas
+function sgharem_widgets_init() {
+    register_sidebar(array(
+        'name'          => 'Sidebar',
+        'id'            => 'sidebar-1',
+        'description'   => 'Add widgets here to appear in your sidebar.',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h3 class="widget-title">',
+        'after_title'   => '</h3>',
+    ));
+
+    register_sidebar(array(
+        'name'          => 'Footer Widget 1',
+        'id'            => 'footer-1',
+        'description'   => 'Footer column 1',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h4 class="widget-title">',
+        'after_title'   => '</h4>',
+    ));
+
+    register_sidebar(array(
+        'name'          => 'Footer Widget 2',
+        'id'            => 'footer-2',
+        'description'   => 'Footer column 2',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h4 class="widget-title">',
+        'after_title'   => '</h4>',
+    ));
+
+    register_sidebar(array(
+        'name'          => 'Footer Widget 3',
+        'id'            => 'footer-3',
+        'description'   => 'Footer column 3',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h4 class="widget-title">',
+        'after_title'   => '</h4>',
+    ));
+
+    register_sidebar(array(
+        'name'          => 'Footer Widget 4',
+        'id'            => 'footer-4',
+        'description'   => 'Footer column 4',
+        'before_widget' => '<div id="%1$s" class="widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<h4 class="widget-title">',
+        'after_title'   => '</h4>',
+    ));
+}
+add_action('widgets_init', 'sgharem_widgets_init');
+
+// Custom comment template
+function sgharem_comment_template($comment, $args, $depth) {
+    ?>
+    <li id="comment-<?php comment_ID(); ?>" <?php comment_class(); ?>>
+        <article class="comment-body">
+            <div class="comment-avatar">
+                <?php echo get_avatar($comment, $args['avatar_size']); ?>
+            </div>
+            <div class="comment-content">
+                <div class="comment-author"><?php comment_author(); ?></div>
+                <div class="comment-meta">
+                    <a href="<?php echo esc_url(get_comment_link($comment, $args)); ?>">
+                        <?php printf('%1$s at %2$s', get_comment_date(), get_comment_time()); ?>
+                    </a>
+                </div>
+                <div class="comment-text"><?php comment_text(); ?></div>
+                <?php
+                comment_reply_link(array_merge($args, array(
+                    'depth'     => $depth,
+                    'max_depth' => $args['max_depth'],
+                )));
+                ?>
+            </div>
+        </article>
+    <?php
+}
 
 // Register Banner Custom Post Type
 function sgharem_register_banner_cpt() {

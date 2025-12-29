@@ -1,10 +1,143 @@
 /*
 Theme Name: SGHarem Theme
-Theme URI: https://sgharem.org
+Theme URI: https://sgharem.local
 Author: SGHarem
-Description: 100% converted from static HTML
+Author URI: https://sgharem.local
+Description: A custom WordPress theme with Custom Post Types for Banner, Gallery, Services, Regions, Quick Links, FAQ, Blog, Contact, Footer Widgets, and Language Switcher. Features include responsive design, pagination, search functionality, and widget support.
 Version: 1.0
+Requires at least: 5.0
+Tested up to: 6.4
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: sgharem-theme
+Tags: custom-logo, custom-menu, featured-images, theme-options, translation-ready, blog, one-column, two-columns, three-columns, grid-layout, footer-widgets
 */
 
-/* === ORIGINAL CSS MOVED FROM HTML === */
-/* You can paste full CSS here if needed */
+/* === BASE STYLES === */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+a {
+    color: #7E0C0C;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* === UTILITY CLASSES === */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 10px; }
+.mt-2 { margin-top: 20px; }
+.mt-3 { margin-top: 30px; }
+.mb-1 { margin-bottom: 10px; }
+.mb-2 { margin-bottom: 20px; }
+.mb-3 { margin-bottom: 30px; }
+
+/* === BUTTONS === */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #7E0C0C;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #5a0909;
+    text-decoration: none;
+}
+
+.btn-large {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #7E0C0C;
+    color: #7E0C0C;
+}
+
+.btn-outline:hover {
+    background: #7E0C0C;
+    color: #fff;
+}
+
+/* === SCREEN READER TEXT === */
+.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal !important;
+}
+
+/* === ALIGNMENTS === */
+.alignleft {
+    float: left;
+    margin-right: 1.5em;
+    margin-bottom: 1em;
+}
+
+.alignright {
+    float: right;
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.aligncenter {
+    clear: both;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1em;
+}
+
+/* === CLEARFIX === */
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+}
