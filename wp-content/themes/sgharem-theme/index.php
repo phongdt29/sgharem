@@ -366,10 +366,57 @@ $blogs = sgharem_get_blogs();
             </a>
         </div>
         <?php endif; ?>
+
+        <!-- Latest Posts from WordPress -->
+        <?php
+        $latest_posts = new WP_Query(array(
+            'post_type' => 'post',
+            'posts_per_page' => 3,
+            'post_status' => 'publish',
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ));
+        ?>
+        <?php if ($latest_posts->have_posts()) : ?>
+        <h2 class="section-title" style="margin-top: 50px;">Bài viết mới nhất</h2>
+        <div class="blog-grid">
+            <?php while ($latest_posts->have_posts()) : $latest_posts->the_post(); ?>
+            <div class="blog-card">
+                <?php if (has_post_thumbnail()) : ?>
+                <a href="<?php the_permalink(); ?>">
+                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'medium'); ?>" alt="<?php the_title_attribute(); ?>" class="blog-image">
+                </a>
+                <?php endif; ?>
+                <div class="blog-content">
+                    <h3 class="blog-title">
+                        <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                    </h3>
+                    <div class="blog-meta">
+                        <span class="blog-date"><?php echo get_the_date(); ?></span>
+                    </div>
+                    <p class="blog-description">
+                        <?php echo wp_trim_words(get_the_excerpt(), 20, '...'); ?>
+                    </p>
+                    <a href="<?php the_permalink(); ?>" class="blog-btn">
+                        Xem thêm →
+                    </a>
+                </div>
+            </div>
+            <?php endwhile; ?>
+            <?php wp_reset_postdata(); ?>
+        </div>
+        <?php endif; ?>
     </div>
 </section>
 
 <style>
+.blog-meta {
+    margin-bottom: 10px;
+}
+.blog-date {
+    color: #999;
+    font-size: 13px;
+}
 .blog-section {
     padding: 60px 0;
     background: #f8f9fa;
