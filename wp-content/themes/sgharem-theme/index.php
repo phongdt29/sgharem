@@ -398,7 +398,7 @@ $blogs = sgharem_get_blogs();
                         <?php echo wp_trim_words(get_the_excerpt(), 20, '...'); ?>
                     </p>
                     <a href="<?php the_permalink(); ?>" class="blog-btn">
-                        Xem thêm →
+                        View more →
                     </a>
                 </div>
             </div>
