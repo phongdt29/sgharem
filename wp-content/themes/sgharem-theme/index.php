@@ -137,6 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
     .link-card img {
         width: 100%;
+        height: auto;
+        object-fit: contain;
         border-radius: 8px;
         margin-bottom: 10px;
     }
