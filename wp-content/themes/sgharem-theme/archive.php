@@ -140,7 +140,7 @@
 .blog-image {
     width: 100%;
     height: 200px;
-    object-fit: cover;
+    object-fit: contain;
 }
 .blog-content {
     padding: 20px;

@@ -126,7 +126,7 @@
 .search-thumb img {
     width: 150px;
     height: 100px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 5px;
 }
 .search-content {
