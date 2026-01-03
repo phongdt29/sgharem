@@ -35,7 +35,7 @@
             <article class="search-item">
                 <?php if (has_post_thumbnail()) : ?>
                 <a href="<?php the_permalink(); ?>" class="search-thumb">
-                    <?php the_post_thumbnail('large'); ?>
+                    <?php the_post_thumbnail('full'); ?>
                 </a>
                 <?php endif; ?>
                 <div class="search-content">

@@ -933,7 +933,7 @@ function sgharem_get_quick_links() {
             'url' => get_post_meta($link->ID, '_quicklink_url', true),
             'description' => get_post_meta($link->ID, '_quicklink_description', true),
             'button_text' => get_post_meta($link->ID, '_quicklink_button_text', true),
-            'image_url' => get_the_post_thumbnail_url($link->ID, 'large'),
+            'image_url' => get_the_post_thumbnail_url($link->ID, 'full'),
         );
     }
     return $quick_links;
@@ -1501,7 +1501,7 @@ function sgharem_get_services() {
             'url' => get_post_meta($service->ID, '_service_url', true),
             'description' => get_post_meta($service->ID, '_service_description', true),
             'button_text' => get_post_meta($service->ID, '_service_button_text', true),
-            'image_url' => get_the_post_thumbnail_url($service->ID, 'large'),
+            'image_url' => get_the_post_thumbnail_url($service->ID, 'full'),
         );
     }
     return $items;
@@ -2704,7 +2704,7 @@ function sgharem_get_blogs() {
             'description' => get_post_meta($blog->ID, '_blog_description', true),
             'url' => get_post_meta($blog->ID, '_blog_url', true),
             'button_text' => get_post_meta($blog->ID, '_blog_button_text', true),
-            'image_url' => get_the_post_thumbnail_url($blog->ID, 'large'),
+            'image_url' => get_the_post_thumbnail_url($blog->ID, 'full'),
         );
     }
     return $items;

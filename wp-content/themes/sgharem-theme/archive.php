@@ -54,7 +54,7 @@
             <div class="blog-card">
                 <?php if (has_post_thumbnail()) : ?>
                 <a href="<?php the_permalink(); ?>">
-                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'large'); ?>" alt="<?php the_title_attribute(); ?>" class="blog-image">
+                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'full'); ?>" alt="<?php the_title_attribute(); ?>" class="blog-image">
                 </a>
                 <?php endif; ?>
                 <div class="blog-content">
