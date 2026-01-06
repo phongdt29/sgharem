@@ -380,7 +380,7 @@ $blogs = sgharem_get_blogs();
         ));
         ?>
         <?php if ($latest_posts->have_posts()) : ?>
-        <h2 class="section-title" style="margin-top: 50px;">Bài viết mới nhất</h2>
+        <h2 class="section-title" style="margin-top: 50px;">The Latest Post</h2>
         <div class="blog-grid">
             <?php while ($latest_posts->have_posts()) : $latest_posts->the_post(); ?>
             <div class="blog-card">
